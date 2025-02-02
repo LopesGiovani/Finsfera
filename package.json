@@ -7,7 +7,9 @@
   "description": "## 📌 Sobre o Projeto **Finsfera** é uma plataforma inovadora que automatiza e moderniza a gestão financeira e contábil de pequenas e médias empresas. Utilizando inteligência artificial, a Finsfera oferece soluções integradas para faturamento, pagamentos multimoeda, reconciliação bancária e muito mais, permitindo que negócios operem de forma ágil e global.",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev"
+    "dev": "next dev",
+    "lint:check": "prettier --check .",
+    "lint:fix": "prettier --write ."
   },
   "author": "",
   "license": "MIT",
