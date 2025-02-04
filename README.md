@@ -50,7 +50,7 @@ Antes de iniciar, você precisará ter instalado:
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/finsfera.git
+   git clone https://github.com/LopesGiovani/finsfera.git
    cd finsfera
    ```
 2. Instale as dependências:
