@@ -71,6 +71,10 @@ Antes de iniciar, você precisará ter instalado:
    ```
    http://localhost:3000
    ```
+6. Para rodar a aplicação com Docker, execute o comando:
+   ```
+   docker compose -f infra/compose.yaml up
+   ```
 
 ## 🛠️ Contribuição
 
