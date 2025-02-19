@@ -1,0 +1,164 @@
+---
+description: 
+globs: 
+---
+Descrição: Regras específicas para o desenvolvimento da Finsfera
+Globs: src/\*_/_.{js,jsx,ts,tsx}
+
+---
+
+# Diretrizes Gerais
+
+- Seguir as melhores práticas de desenvolvimento em ReactJS, NextJS, JavaScript, HTML, CSS e TailwindCSS.
+- Priorizar a legibilidade e manutenibilidade do código.
+- Utilizar classes do TailwindCSS para estilização; evitar o uso de CSS ou tags inline.
+- Adotar a convenção de nomenclatura "handle" para funções de eventos (ex.: handleClick para onClick).
+- Implementar recursos de acessibilidade em todos os elementos interativos (ex.: tabindex="0", aria-label, on:click, on:keydown).
+
+# Estrutura de Componentes
+
+- Componentes devem ser funções puras, sem efeitos colaterais.
+- Utilizar hooks do React para gerenciamento de estado e efeitos colaterais.
+- Manter componentes pequenos e focados em uma única responsabilidade.
+
+# Gerenciamento de Estado
+
+- Utilizar o Context API ou Redux para gerenciamento de estado global.
+- Evitar o uso excessivo de props drilling; preferir o uso de contextos para compartilhamento de estado.
+
+# Integração com APIs
+
+- Utilizar Axios para requisições HTTP assíncronas.
+- Gerenciar erros de forma adequada, fornecendo feedback ao usuário.
+- Implementar lógica de retry para requisições falhas, quando apropriado.
+
+# Testes
+
+- Escrever testes unitários para componentes e funções utilizando Jest e React Testing Library.
+- Garantir cobertura de testes mínima de 80%.
+- Utilizar mocks para dependências externas durante os testes.
+
+# Padrões de Código
+
+- Seguir as convenções de estilo do Airbnb para JavaScript.
+- Utilizar ESLint e Prettier para garantir consistência no código.
+- Evitar duplicação de código; aplicar o princípio DRY (Don't Repeat Yourself).
+
+# Segurança
+
+- Validar e sanitizar todas as entradas do usuário.
+- Utilizar HTTPS para todas as comunicações de rede.
+- Implementar autenticação e autorização robustas, utilizando JWT para sessões de usuário.
+
+# Desempenho
+
+- Otimizar o carregamento de recursos, utilizando técnicas como lazy loading e code splitting.
+- Monitorar e otimizar o desempenho da aplicação utilizando ferramentas como Lighthouse.
+- Minimizar o uso de dependências externas; preferir soluções nativas quando possível.
+
+# Documentação
+
+- Documentar componentes e funções utilizando JSDoc.
+- Manter a documentação atualizada com as mudanças no código.
+- Utilizar ferramentas como Storybook para documentação de componentes UI.
+
+# Padrões de Design
+
+- Seguir as diretrizes de design da Finsfera para consistência visual.
+- Utilizar componentes reutilizáveis para manter a consistência da interface.
+- Garantir que a aplicação seja responsiva e acessível em todos os dispositivos.
+
+# Integração Contínua
+
+- Configurar pipelines de CI/CD utilizando GitHub Actions ou outra ferramenta apropriada.
+- Garantir que todos os testes sejam executados e passem antes de cada merge.
+- Automatizar o deploy para ambientes de staging e produção.
+
+# Gerenciamento de Dependências
+
+- Utilizar o npm ou yarn para gerenciamento de pacotes.
+- Manter as dependências atualizadas e seguras.
+- Auditar regularmente as dependências para vulnerabilidades de segurança.
+
+# Gerenciamento de Erros
+
+- Implementar um sistema de logging para capturar erros em produção.
+- Utilizar ferramentas como Sentry para monitoramento de erros.
+- Fornecer feedback adequado ao usuário em caso de erros.
+
+# Acessibilidade
+
+- Garantir que todos os elementos interativos sejam acessíveis via teclado.
+- Utilizar atributos ARIA para melhorar a acessibilidade.
+- Testar a aplicação utilizando ferramentas como axe-core para identificar problemas de acessibilidade.
+
+# Internacionalização
+
+- Preparar a aplicação para suportar múltiplos idiomas.
+- Utilizar bibliotecas como react-intl para gerenciamento de traduções.
+- Garantir que a aplicação seja culturalmente sensível e apropriada para todos os usuários.
+
+# Responsividade
+
+- Utilizar unidades relativas (ex.: rem, em) para dimensões e espaçamentos.
+- Testar a aplicação em diferentes tamanhos de tela e dispositivos.
+- Garantir que a interface seja utilizável em dispositivos móveis e desktops.
+
+# Gerenciamento de Sessão
+
+- Implementar sessões de usuário utilizando JWT.
+- Garantir que as sessões expirem após um período de inatividade.
+- Fornecer uma maneira segura para os usuários se desautenticarem.
+
+# Gerenciamento de Erros de Rede
+
+- Implementar lógica de retry para requisições de rede falhas.
+- Exibir mensagens de erro amigáveis ao usuário em caso de falhas de rede.
+- Monitorar o desempenho da rede e otimizar as requisições.
+
+# Gerenciamento de Recursos
+
+- Utilizar técnicas de lazy loading para carregar recursos sob demanda.
+- Minimizar o uso de recursos pesados na inicialização da aplicação.
+- Monitorar o uso de memória e CPU para identificar e corrigir gargalos de desempenho.
+
+# Gerenciamento de Estado de Carregamento
+
+- Exibir indicadores de carregamento durante operações assíncronas.
+- Garantir que a interface permaneça responsiva durante o carregamento.
+- Utilizar placeholders para melhorar a experiência do usuário durante o carregamento.
+
+# Gerenciamento de Estado de Erro
+
+- Exibir mensagens de erro claras e úteis ao usuário.
+- Fornecer opções para o usuário tentar novamente ou entrar em contato com o suporte.
+- Registrar erros para análise posterior e melhoria contínua.
+
+# Gerenciamento de Estado de Sucesso
+
+- Exibir mensagens de sucesso após operações bem-sucedidas.
+- Fornecer feedback positivo ao usuário para melhorar a experiência.
+- Utilizar animações sutis para destacar mensagens de sucesso.
+
+# Gerenciamento de Estado de Validação
+
+- Validar entradas do usuário em tempo real.
+- Fornecer feedback imediato sobre entradas inválidas.
+- Utilizar mensagens de erro claras e úteis para guiar o usuário.
+
+# Gerenciamento de Estado de Foco
+
+- Garantir que elementos interativos sejam focáveis e acessíveis via teclado.
+- Utilizar atributos ARIA para melhorar a navegação por teclado.
+- Testar a navegação por teclado para garantir uma experiência de usuário fluida.
+
+# Gerenciamento de Estado de Visibilidade
+
+- Garantir que elementos importantes sejam visíveis em todas as resoluções de tela.
+- Utilizar técnicas de design responsivo para adaptar a interface a diferentes tamanhos de tela.
+- Testar a visibilidade de elementos em diferentes dispositivos e orientações de tela.
+
+# Gerenciamento de Estado de Interação
+
+- Garantir que a interface seja intuitiva
+  ::contentReference[oaicite:0]{index=0}
