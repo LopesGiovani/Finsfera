@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import Image from "next/image";
 
 interface Suggestion {
   id: number;
@@ -55,7 +54,9 @@ export function FinsAI() {
         onClick={toggleChat}
         className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border hover:bg-gray-50"
       >
-        <Image src="/fins-ai-logo.png" alt="Fins AI" width={24} height={24} />
+        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+          AI
+        </div>
         <span className="text-gray-700">Ask Fi</span>
       </button>
 
@@ -90,13 +91,9 @@ export function FinsAI() {
 
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="flex flex-col items-center text-center mb-8">
-              <Image
-                src="/fins-ai-logo.png"
-                alt="Fins AI"
-                width={48}
-                height={48}
-                className="mb-4"
-              />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg mb-4">
+                AI
+              </div>
               <h2 className="text-xl font-semibold mb-1">Hello,</h2>
               <p className="text-gray-600">I'm Fi, your friendly AI advisor</p>
             </div>

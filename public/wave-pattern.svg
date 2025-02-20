@@ -1,12 +1,19 @@
-<svg width="1440" height="1024" viewBox="0 0 1440 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M1440 0H0V1024H1440V0Z" fill="url(#paint0_radial_0_1)"/>
-  <g opacity="0.4">
-    <path d="M1440 0C1280 80 1120 160 960 160C800 160 640 80 480 80C320 80 160 160 80 200L0 240V0H1440Z" fill="white"/>
+<svg width="1440" height="64" viewBox="0 0 1440 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g opacity="0.2">
+    <path
+      d="M0 32C160 32 160 48 320 48C480 48 480 16 640 16C800 16 800 48 960 48C1120 48 1120 16 1280 16C1440 16 1440 48 1600 48"
+      stroke="white"
+      strokeWidth="0.5"
+    />
+    <path
+      d="M0 24C160 24 160 40 320 40C480 40 480 8 640 8C800 8 800 40 960 40C1120 40 1120 8 1280 8C1440 8 1440 40 1600 40"
+      stroke="white"
+      strokeWidth="0.5"
+    />
+    <path
+      d="M0 40C160 40 160 56 320 56C480 56 480 24 640 24C800 24 800 56 960 56C1120 56 1120 24 1280 24C1440 24 1440 56 1600 56"
+      stroke="white"
+      strokeWidth="0.5"
+    />
   </g>
-  <defs>
-    <radialGradient id="paint0_radial_0_1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(720 512) rotate(90) scale(512 720)">
-      <stop stop-color="white" stop-opacity="0.1"/>
-      <stop offset="1" stop-color="white" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
 </svg> 

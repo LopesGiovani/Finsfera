@@ -130,16 +130,19 @@ export function DashboardSidebar() {
   return (
     <aside className="fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-[280px] bg-white border-r border-gray-200 overflow-y-auto">
       <div className="flex flex-col min-h-full">
-        <div className="p-6">
+        <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <Image
-              src="/logo-icon.png"
-              alt="Finsfera"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-xl font-semibold">Finsfera</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+              F
+            </div>
+            <div>
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                Finsfera
+              </span>
+              <span className="block text-xs text-gray-500 mt-0.5">
+                Accounting Software
+              </span>
+            </div>
           </div>
         </div>
 

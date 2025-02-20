@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { EyeIcon } from "@heroicons/react/24/outline";
 
 export default function Login() {
   const router = useRouter();
@@ -10,79 +10,80 @@ export default function Login() {
     router.push("/dashboard");
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // Aqui você adicionaria a lógica de autenticação social
-    // Por enquanto, vamos apenas redirecionar para o dashboard
-    router.push("/dashboard");
-  };
-
   return (
     <div className="min-h-screen flex">
       {/* Lado Esquerdo - Formulário */}
       <div className="w-full lg:w-1/2 p-8 sm:p-12 lg:p-20">
         <Link href="/" className="inline-block mb-12">
-          <Image
-            src="/logo.svg"
-            alt="Finsfera"
-            width={120}
-            height={40}
-            className="h-10 w-auto"
-          />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#00E6CA] to-[#00A3FF] rounded-lg flex items-center justify-center">
+              <svg
+                className="w-5 h-5 text-white"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold">Finsfera</span>
+          </div>
         </Link>
 
-        <h1 className="text-4xl text-gray-900 font-semibold mb-8">
+        <h1 className="text-[2.5rem] font-bold text-[#1E293B] mb-12">
           Welcome back
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm text-primary-500">
-              Email
-            </label>
+            <label className="block text-sm text-[#0066FF] mb-2">Email</label>
             <input
               type="email"
-              id="email"
-              className="mt-1 w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
               required
             />
+            <div className="text-xs text-red-500 mt-1">Required</div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label
-                htmlFor="password"
-                className="block text-sm text-primary-500"
-              >
-                Password
-              </label>
+              <label className="block text-sm text-[#0066FF]">Password</label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary-500 hover:text-primary-600"
+                className="text-sm text-[#0066FF] hover:text-blue-700"
               >
                 Forgot password?
               </Link>
             </div>
-            <input
-              type="password"
-              id="password"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              required
-            />
-            <div className="mt-4 flex items-center">
+            <div className="relative">
               <input
-                type="checkbox"
-                id="remember"
-                className="h-4 w-4 text-primary-500 border-gray-300 rounded"
+                type="password"
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
+                required
               />
-              <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
-                Remember me
-              </label>
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+              >
+                <EyeIcon className="w-5 h-5" />
+              </button>
             </div>
+            <div className="text-xs text-red-500 mt-1">Required</div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="remember"
+              className="h-4 w-4 text-[#0066FF] border-gray-300 rounded focus:ring-[#0066FF]"
+            />
+            <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+              Remember me
+            </label>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+            className="w-full py-3 px-4 bg-gradient-to-r from-[#00E6CA] to-[#00A3FF] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
           >
             Log In
           </button>
@@ -99,46 +100,31 @@ export default function Login() {
           </div>
 
           <div className="mt-6 space-y-4">
-            <button
-              onClick={() => handleSocialLogin("google")}
-              className="w-full flex items-center justify-center px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-            >
-              <svg
-                className="w-5 h-5 mr-3"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+            <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 48 48">
                 <path
-                  d="M23.766 12.277c0-.844-.076-1.654-.218-2.434H12.24v4.606h6.482c-.28 1.5-1.13 2.77-2.406 3.623v3.01h3.897c2.28-2.1 3.593-5.19 3.593-8.805z"
-                  fill="#4285F4"
+                  fill="#FFC107"
+                  d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
                 />
                 <path
-                  d="M12.24 24c3.259 0 5.987-1.077 7.983-2.918l-3.897-3.01c-1.08.724-2.463 1.152-4.086 1.152-3.142 0-5.804-2.123-6.752-4.973H1.49v3.11C3.475 21.333 7.553 24 12.24 24z"
-                  fill="#34A853"
+                  fill="#FF3D00"
+                  d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
                 />
                 <path
-                  d="M5.488 14.25c-.242-.723-.38-1.496-.38-2.29 0-.795.138-1.568.38-2.291V6.558H1.49A11.944 11.944 0 000 11.96c0 1.936.47 3.77 1.49 5.392l3.998-3.102z"
-                  fill="#FBBC05"
+                  fill="#4CAF50"
+                  d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
                 />
                 <path
-                  d="M12.24 4.756c1.77 0 3.361.608 4.61 1.804l3.458-3.458C18.247 1.19 15.519 0 12.24 0 7.553 0 3.475 2.667 1.49 6.558l3.998 3.11c.948-2.85 3.61-4.973 6.752-4.973z"
-                  fill="#EA4335"
+                  fill="#1976D2"
+                  d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
                 />
               </svg>
               With Google
             </button>
-            <button
-              onClick={() => handleSocialLogin("apple")}
-              className="w-full flex items-center justify-center px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-            >
-              <svg
-                className="w-5 h-5 mr-3"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+
+            <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="black">
+                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
               </svg>
               Sign in with Apple
             </button>
@@ -149,7 +135,7 @@ export default function Login() {
           Don't have an account?{" "}
           <Link
             href="/signup"
-            className="text-primary-500 hover:text-primary-600 font-medium"
+            className="text-[#0066FF] hover:text-blue-700 font-medium"
           >
             Get started
           </Link>
@@ -157,35 +143,17 @@ export default function Login() {
       </div>
 
       {/* Lado Direito - Hero */}
-      <div className="hidden lg:block lg:w-1/2 bg-gradient-to-br from-primary-500 to-secondary-500 p-12">
-        <div className="h-full flex flex-col justify-between text-white">
+      <div className="hidden lg:block lg:w-1/2 bg-gradient-to-br from-[#00E6CA] to-[#00A3FF] p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/wave-pattern.svg')] opacity-10"></div>
+        <div className="h-full flex flex-col justify-between relative">
           <div></div>
           <div>
-            <h2 className="text-4xl font-bold mb-4">
+            <h2 className="text-4xl font-bold text-white mb-4">
               AI-powered accounting to simplify your finances
             </h2>
-            <p className="text-lg opacity-90">
+            <p className="text-lg text-white/90">
               Everything you'll ever need to manage your business from anywhere
             </p>
-
-            <div className="mt-8 flex space-x-4">
-              <Link href="#" className="opacity-90 hover:opacity-100">
-                <Image
-                  src="/app-store.png"
-                  alt="Download on App Store"
-                  width={140}
-                  height={42}
-                />
-              </Link>
-              <Link href="#" className="opacity-90 hover:opacity-100">
-                <Image
-                  src="/google-play.png"
-                  alt="Get it on Google Play"
-                  width={140}
-                  height={42}
-                />
-              </Link>
-            </div>
           </div>
         </div>
       </div>
