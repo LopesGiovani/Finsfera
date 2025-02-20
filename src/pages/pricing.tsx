@@ -8,6 +8,7 @@ import {
   G2Icon,
 } from "@/components/icons";
 import { Avatar } from "@/components/Avatar";
+import { Logo } from "@/components/Logo";
 
 interface PlanProps {
   name: string;
@@ -140,7 +141,11 @@ export default function Pricing() {
       <div className="max-w-7xl mx-auto px-4 pt-20 pb-32">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold mb-8">
-            <span className="text-gray-800">Fiskl</span>{" "}
+            <Logo
+              className="inline-flex"
+              textColor="text-gray-800"
+              showText={false}
+            />
             <span className="text-[#0066FF]">Pricing Plans</span>
           </h1>
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { EyeIcon } from "@heroicons/react/24/outline";
+import { Logo } from "@/components/Logo";
 
 export default function Login() {
   const router = useRouter();
@@ -15,22 +16,11 @@ export default function Login() {
       {/* Lado Esquerdo - Formulário */}
       <div className="w-full lg:w-1/2 p-8 sm:p-12 lg:p-20">
         <Link href="/" className="inline-block mb-12">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#00E6CA] to-[#00A3FF] rounded-lg flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <span className="text-2xl font-bold">Finsfera</span>
-          </div>
+          <Logo textColor="text-gray-900" />
         </Link>
 
         <h1 className="text-[2.5rem] font-bold text-[#1E293B] mb-12">
-          Welcome back
+          Bem-vindo de volta
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -41,17 +31,17 @@ export default function Login() {
               className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066FF]"
               required
             />
-            <div className="text-xs text-red-500 mt-1">Required</div>
+            <div className="text-xs text-red-500 mt-1">Obrigatório</div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm text-[#0066FF]">Password</label>
+              <label className="block text-sm text-[#0066FF]">Senha</label>
               <Link
                 href="/forgot-password"
                 className="text-sm text-[#0066FF] hover:text-blue-700"
               >
-                Forgot password?
+                Esqueceu a senha?
               </Link>
             </div>
             <div className="relative">
@@ -67,7 +57,7 @@ export default function Login() {
                 <EyeIcon className="w-5 h-5" />
               </button>
             </div>
-            <div className="text-xs text-red-500 mt-1">Required</div>
+            <div className="text-xs text-red-500 mt-1">Obrigatório</div>
           </div>
 
           <div className="flex items-center">
@@ -77,7 +67,7 @@ export default function Login() {
               className="h-4 w-4 text-[#0066FF] border-gray-300 rounded focus:ring-[#0066FF]"
             />
             <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
-              Remember me
+              Lembrar de mim
             </label>
           </div>
 
@@ -85,7 +75,7 @@ export default function Login() {
             type="submit"
             className="w-full py-3 px-4 bg-gradient-to-r from-[#00E6CA] to-[#00A3FF] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
           >
-            Log In
+            Entrar
           </button>
         </form>
 
@@ -95,7 +85,7 @@ export default function Login() {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">or</span>
+              <span className="px-4 bg-white text-gray-500">ou</span>
             </div>
           </div>
 
@@ -132,12 +122,12 @@ export default function Login() {
         </div>
 
         <p className="mt-8 text-center text-sm text-gray-600">
-          Don't have an account?{" "}
+          Não tem uma conta?{" "}
           <Link
             href="/signup"
             className="text-[#0066FF] hover:text-blue-700 font-medium"
           >
-            Get started
+            Comece agora
           </Link>
         </p>
       </div>
@@ -149,10 +139,10 @@ export default function Login() {
           <div></div>
           <div>
             <h2 className="text-4xl font-bold text-white mb-4">
-              AI-powered accounting to simplify your finances
+              Contabilidade com IA para simplificar suas finanças
             </h2>
             <p className="text-lg text-white/90">
-              Everything you'll ever need to manage your business from anywhere
+              Tudo que você precisa para gerenciar seu negócio de qualquer lugar
             </p>
           </div>
         </div>

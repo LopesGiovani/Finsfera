@@ -18,6 +18,7 @@ import {
   CreditCardIcon,
   CogIcon,
 } from "@heroicons/react/24/outline";
+import { Logo } from "../Logo";
 
 const menuItems = [
   { name: "Home", icon: HomeIcon, href: "/dashboard" },
@@ -132,17 +133,9 @@ export function DashboardSidebar() {
       <div className="flex flex-col min-h-full">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-              F
-            </div>
-            <div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                Finsfera
-              </span>
-              <span className="block text-xs text-gray-500 mt-0.5">
-                Accounting Software
-              </span>
-            </div>
+            <Link href="/">
+              <Logo textColor="text-gray-900" />
+            </Link>
           </div>
         </div>
 
