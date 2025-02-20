@@ -14,7 +14,7 @@ const suggestions: Suggestion[] = [
   },
   {
     id: 2,
-    text: "How do I create a recurring invoice in Fiskl?",
+    text: "How do I create a recurring invoice in Finsfera?",
   },
   {
     id: 3,
@@ -124,7 +124,7 @@ export function FinsAI() {
                 type="text"
                 value={message}
                 onChange={handleMessageChange}
-                placeholder="Ask about Fiskl, accounting and more..."
+                placeholder="Ask about Finsfera, accounting and more..."
                 className="w-full pl-4 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength={400}
               />

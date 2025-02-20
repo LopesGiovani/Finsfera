@@ -49,7 +49,7 @@ export default function NovaFatura() {
                     </label>
                     <input
                       type="text"
-                      value="Fiskeclone Invoice"
+                      value="Finsfera Invoice"
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg"
                     />
                   </div>

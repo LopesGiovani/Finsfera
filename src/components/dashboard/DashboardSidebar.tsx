@@ -128,18 +128,18 @@ export function DashboardSidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-[280px] bg-white border-r border-gray-200 overflow-y-auto">
+    <aside className="fixed left-0 top-14 h-[calc(100vh-3.5rem)] w-[280px] bg-white border-r border-gray-200 overflow-y-auto">
       <div className="flex flex-col min-h-full">
         <div className="p-6">
           <div className="flex items-center gap-3">
             <Image
               src="/logo-icon.png"
-              alt="Fiskl"
+              alt="Finsfera"
               width={40}
               height={40}
               className="rounded-xl"
             />
-            <span className="text-xl font-semibold">Fiskeclone</span>
+            <span className="text-xl font-semibold">Finsfera</span>
           </div>
         </div>
 

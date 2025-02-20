@@ -2,7 +2,7 @@ import Head from "next/head";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
-import { FisklAI } from "@/components/FisklAI";
+import { FinsAI } from "@/components/FinsAI";
 import { Pricing } from "@/components/Pricing";
 import { Footer } from "@/components/Footer";
 
@@ -22,7 +22,7 @@ export default function Home() {
         <main>
           <Hero />
           <Features />
-          <FisklAI />
+          <FinsAI />
           <Pricing />
         </main>
         <Footer />

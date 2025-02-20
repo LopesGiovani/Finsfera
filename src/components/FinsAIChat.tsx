@@ -5,19 +5,19 @@ import {
   LightBulbIcon,
 } from "@heroicons/react/24/outline";
 
-interface AskFiChatProps {
+interface FinsAIChatProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 const suggestions = [
   "What is the difference between a P&L and Balance Sheet report?",
-  "How do I create a recurring invoice in Fiskl?",
+  "How do I create a recurring invoice in Finsfera?",
   "How do I ensure that the expenses I add are included in my accounting reports?",
   "Can you explain the concept of accrual accounting and how it differs from cash accounting?",
 ];
 
-export function AskFiChat({ isOpen, onClose }: AskFiChatProps) {
+export function FinsAIChat({ isOpen, onClose }: FinsAIChatProps) {
   const [message, setMessage] = useState("");
   const [charCount, setCharCount] = useState(0);
 
@@ -69,7 +69,7 @@ export function AskFiChat({ isOpen, onClose }: AskFiChatProps) {
         <div className="p-4 border-t bg-white">
           <div className="relative">
             <textarea
-              placeholder="Ask about Fiskl, accounting and more..."
+              placeholder="Ask about Finsfera, accounting and more..."
               className="w-full p-3 pr-12 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               rows={1}
               maxLength={400}

@@ -2,11 +2,11 @@ import { useState } from "react";
 import { BellIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
-import { AskFiChat } from "./AskFiChat";
+import { FinsAIChat } from "./FinsAIChat";
 import { UserMenu } from "./UserMenu";
 
 export function TopBar() {
-  const [isAskFiOpen, setIsAskFiOpen] = useState(false);
+  const [isFinsAIOpen, setIsFinsAIOpen] = useState(false);
 
   return (
     <>
@@ -20,9 +20,9 @@ export function TopBar() {
 
           {/* Lado Direito */}
           <div className="flex items-center gap-4">
-            {/* Ask Fi */}
+            {/* Fins AI */}
             <button
-              onClick={() => setIsAskFiOpen(true)}
+              onClick={() => setIsFinsAIOpen(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
             >
               <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -54,7 +54,10 @@ export function TopBar() {
         </div>
       </div>
 
-      <AskFiChat isOpen={isAskFiOpen} onClose={() => setIsAskFiOpen(false)} />
+      <FinsAIChat
+        isOpen={isFinsAIOpen}
+        onClose={() => setIsFinsAIOpen(false)}
+      />
     </>
   );
 }
