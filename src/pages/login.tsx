@@ -124,7 +124,7 @@ export default function Login() {
         <p className="mt-8 text-center text-sm text-gray-600">
           Não tem uma conta?{" "}
           <Link
-            href="/signup"
+            href="/pricing"
             className="text-[#0066FF] hover:text-blue-700 font-medium"
           >
             Comece agora
