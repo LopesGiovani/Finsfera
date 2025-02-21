@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Button } from "./Button";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -24,12 +25,12 @@ export function Hero() {
               construída para pequenas empresas
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                size="lg"
-                className="bg-white text-primary-500 hover:bg-primary-50"
+              <Link
+                href="/pricing"
+                className="inline-block bg-white text-[#0066FF] px-8 py-3 rounded-[100px] font-medium text-lg hover:opacity-90 transition-opacity"
               >
-                Comece grátis
-              </Button>
+                Começar grátis
+              </Link>
             </div>
             <div className="mt-12 grid grid-cols-2 gap-8">
               <div>
