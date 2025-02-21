@@ -11,7 +11,7 @@
     "dev": "npm run services:up && next dev",
     "lint:check": "prettier --check .",
     "lint:fix": "prettier --write .",
-    "test": "jest",
+    "test": "jest --runInBand",
     "test:watch": "jest --watchAll",
     "services:up": "docker compose -f infra/compose.yaml up -d",
     "services:down": "docker compose -f infra/compose.yaml down",
@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.4",
+    "dotenv-expand": "^11.0.6",
     "next": "^13.1.6",
     "node-pg-migrate": "^6.2.2",
     "pg": "^8.11.3",
