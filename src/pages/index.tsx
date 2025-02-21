@@ -5,6 +5,8 @@ import { Features } from "@/components/Features";
 import { FinsAI } from "@/components/FinsAI";
 import { Pricing } from "@/components/Pricing";
 import { Footer } from "@/components/Footer";
+import { FeatureCards } from "@/components/FeatureCards";
+import { InsightsAndCTA } from "@/components/InsightsAndCTA";
 
 export default function Home() {
   return (
@@ -21,9 +23,11 @@ export default function Home() {
         <Navbar />
         <main>
           <Hero />
+          <FeatureCards />
           <Features />
           <FinsAI />
           <Pricing />
+          <InsightsAndCTA />
         </main>
         <Footer />
       </div>
