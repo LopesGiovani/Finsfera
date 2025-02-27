@@ -17,11 +17,22 @@ import {
   UserGroupIcon,
   CreditCardIcon,
   CogIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { Logo } from "../Logo";
 
 const menuItems = [
   { name: "Home", icon: HomeIcon, href: "/dashboard" },
+  {
+    name: "Ordens de Serviço",
+    icon: WrenchScrewdriverIcon,
+    href: "/dashboard/ordens-servico",
+    subItems: [
+      { name: "Lista de OS", href: "/dashboard/ordens-servico" },
+      { name: "Nova OS", href: "/dashboard/ordens-servico/nova" },
+      { name: "Relatórios", href: "/dashboard/ordens-servico/relatorios" },
+    ],
+  },
   {
     name: "Vendas",
     icon: DocumentTextIcon,
