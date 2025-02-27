@@ -1,3 +1,15 @@
+import { useState } from "react";
+import { Filtros as FiltrosType } from "@/types/ordens-servico";
+
+interface Filtros {
+  status?: string[];
+  cliente?: string;
+  responsavel?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  busca?: string;
+}
+
 export function FiltrosOS({
   filtros,
   onFiltrar,
@@ -11,8 +23,13 @@ export function FiltrosOS({
         <div>
           <label className="block text-sm text-gray-500 mb-1">Status</label>
           <select
-            value={filtros.status}
-            onChange={(e) => onFiltrar({ ...filtros, status: e.target.value })}
+            value={filtros.status ? filtros.status[0] : ""}
+            onChange={(e) =>
+              onFiltrar({
+                ...filtros,
+                status: e.target.value ? [e.target.value] : [],
+              })
+            }
             className="w-full px-3 py-2 border rounded-lg"
           >
             <option value="">Todos</option>
