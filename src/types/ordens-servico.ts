@@ -6,3 +6,9 @@ export interface Filtros {
   dataFim?: string;
   busca?: string;
 }
+
+export interface Template {
+  id: number;
+  nome: string;
+  descricao: string;
+}

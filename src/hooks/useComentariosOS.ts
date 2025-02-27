@@ -14,7 +14,7 @@ export function useComentariosOS(osId: number) {
     mutationFn: (texto: string) =>
       OrdensServicoService.adicionarComentario(osId, texto),
     onSuccess: () => {
-      queryClient.invalidateQueries(["comentarios-os", osId]);
+      queryClient.invalidateQueries({ queryKey: ["comentarios-os", osId] });
     },
   });
 

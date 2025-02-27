@@ -214,4 +214,9 @@ export const OrdensServicoService = {
     );
     return response.data;
   },
+
+  async marcarNotificacaoComoLida(id: number) {
+    const response = await api.put(`/ordens-servico/notificacoes/${id}/lida`);
+    return response.data;
+  },
 };

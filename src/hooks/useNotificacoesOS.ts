@@ -13,7 +13,7 @@ export function useNotificacoesOS() {
     mutationFn: (id: number) =>
       OrdensServicoService.marcarNotificacaoComoLida(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(["notificacoes-os"]);
+      queryClient.invalidateQueries({ queryKey: ["notificacoes-os"] });
     },
   });
 
