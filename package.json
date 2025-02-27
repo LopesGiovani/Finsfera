@@ -8,7 +8,7 @@
   "description": "## 📌 Sobre o Projeto **Finsfera** é uma plataforma inovadora que automatiza e moderniza a gestão financeira e contábil de pequenas e médias empresas. Utilizando inteligência artificial, a Finsfera oferece soluções integradas para faturamento, pagamentos multimoeda, reconciliação bancária e muito mais, permitindo que negócios operem de forma ágil e global.",
   "main": "index.js",
   "scripts": {
-    "dev": "npm run services:up && next dev",
+    "dev": "npm run services:up && npm run wait-for-postgres && npm run migration:up && next dev",
     "lint:check": "prettier --check .",
     "lint:fix": "prettier --write .",
     "test": "jest --runInBand",
@@ -17,7 +17,8 @@
     "services:down": "docker compose -f infra/compose.yaml down",
     "services:stop": "docker compose -f infra/compose.yaml stop",
     "migration:create": "node-pg-migrate --migrations-dir infra/migrations create",
-    "migration:up": "node-pg-migrate --migrations-dir infra/migrations --envPath .env.development up"
+    "migration:up": "node-pg-migrate --migrations-dir infra/migrations --envPath .env.development up",
+    "wait-for-postgres": "node infra/scripts/wait-for-postgres.js"
   },
   "author": "",
   "license": "MIT",
