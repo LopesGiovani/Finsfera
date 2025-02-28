@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Logo } from "@/components/Logo";
 import { useState, FormEvent } from "react";
-import axios from "axios";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const { login } = useAuth();
 
   const validateForm = () => {
     let isValid = true;
@@ -54,16 +55,9 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Envia a requisição para a API
-      const response = await axios.post("/api/auth/login", {
-        email,
-        password,
-      });
-
-      // Se a autenticação for bem-sucedida, redireciona para o dashboard
-      if (response.data.success) {
-        router.push("/dashboard");
-      }
+      // Usa o hook de autenticação para fazer login
+      await login(email, password);
+      router.push("/dashboard");
     } catch (err: any) {
       // Exibe a mensagem de erro
       setError(

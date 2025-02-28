@@ -1,6 +1,8 @@
 // Importa as dependências
 const { Sequelize, DataTypes } = require("sequelize");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const connection = require("../database/connection");
 
 // Configuração da conexão com o banco de dados Neon
 const DATABASE_URL =
@@ -55,6 +57,14 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    role: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
     tableName: "users",
@@ -70,34 +80,53 @@ const User = sequelize.define(
 );
 
 // Função para inicializar o banco de dados
-async function initDB() {
+async function initializeDatabase() {
   try {
-    // Testa a conexão
-    await sequelize.authenticate();
-    console.log("Conexão com o banco de dados estabelecida com sucesso!");
+    console.log("Conectando ao banco de dados...");
+    await connection.authenticate();
+    console.log("Conexão estabelecida com sucesso!");
 
-    // Sincroniza os modelos
     console.log("Sincronizando modelos com o banco de dados...");
-    await sequelize.sync({ force: true });
-    console.log("Sincronização concluída!");
+    await connection.sync({ force: true });
+    console.log("Modelos sincronizados com sucesso!");
 
-    // Cria um usuário administrador
-    console.log("Criando usuário admin...");
-    await User.create({
-      name: "Administrador",
-      email: "admin@exemplo.com",
-      password: "senha123",
+    // Verificar se já existe um usuário proprietário
+    const existingOwner = await User.findOne({
+      where: { role: "owner" },
     });
-    console.log("Usuário admin criado com sucesso!");
 
-    console.log("Banco de dados inicializado com sucesso!");
+    if (!existingOwner) {
+      console.log("Criando usuário proprietário inicial...");
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash("admin123", salt);
+
+      await User.create({
+        name: "Administrador",
+        email: "admin@finsfera.com",
+        password: hashedPassword,
+        role: "owner",
+        status: "active",
+      });
+      console.log("Usuário proprietário criado com sucesso!");
+      console.log("----------------------------------------------------");
+      console.log("Credenciais do proprietário:");
+      console.log("Email: admin@finsfera.com");
+      console.log("Senha: admin123");
+      console.log("----------------------------------------------------");
+      console.log(
+        "IMPORTANTE: Altere estas credenciais após o primeiro login!"
+      );
+    } else {
+      console.log("Usuário proprietário já existe, pulando criação.");
+    }
+
+    console.log("Inicialização do banco de dados concluída com sucesso!");
+    process.exit(0);
   } catch (error) {
-    console.error("Erro ao inicializar o banco de dados:", error);
-  } finally {
-    // Fecha a conexão
-    await sequelize.close();
+    console.error("Erro durante a inicialização do banco de dados:", error);
+    process.exit(1);
   }
 }
 
 // Executa a inicialização
-initDB();
+initializeDatabase();

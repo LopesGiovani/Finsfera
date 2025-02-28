@@ -1,13 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { authenticateUser } from "@/lib/auth";
-import { testConnection } from "@/lib/db";
+import User from "@/models/User";
+import jwt from "jsonwebtoken";
 
-// Inicializa a conexão com o banco de dados
-try {
-  testConnection();
-} catch (error) {
-  console.error("Falha ao conectar com o banco de dados:", error);
-}
+// Obtém o JWT_SECRET do ambiente
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,9 +11,7 @@ export default async function handler(
 ) {
   // Apenas aceita método POST
   if (req.method !== "POST") {
-    return res
-      .status(405)
-      .json({ success: false, message: "Método não permitido" });
+    return res.status(405).json({ message: "Método não permitido" });
   }
 
   try {
@@ -27,35 +21,67 @@ export default async function handler(
     if (!email || !password) {
       return res
         .status(400)
-        .json({ success: false, message: "Email e senha são obrigatórios" });
+        .json({ message: "Email e senha são obrigatórios" });
     }
 
-    // Autentica o usuário
-    const authResult = await authenticateUser(email, password);
+    // Busca o usuário pelo email
+    const user = await User.findOne({ where: { email } });
 
-    if (!authResult.success) {
-      return res
-        .status(401)
-        .json({ success: false, message: authResult.message });
+    if (!user) {
+      return res.status(401).json({ message: "Credenciais inválidas" });
     }
 
-    // Define o cookie com o token
-    res.setHeader(
-      "Set-Cookie",
-      `token=${authResult.token}; Path=/; HttpOnly; Max-Age=${
-        60 * 60 * 24
-      }; SameSite=Strict`
+    // Verifica se o usuário está ativo
+    if (user.status !== "active") {
+      return res.status(401).json({
+        message:
+          user.status === "pending"
+            ? "Sua conta está pendente de ativação"
+            : "Sua conta está desativada",
+      });
+    }
+
+    // Verifica a senha
+    const isPasswordValid = await user.checkPassword(password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Credenciais inválidas" });
+    }
+
+    // Gera o token JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      JWT_SECRET,
+      { expiresIn: "24h" }
     );
 
-    // Retorna os dados do usuário
+    // Define o cookie de autenticação de forma mais simples
+    res.setHeader(
+      "Set-Cookie",
+      `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${
+        process.env.NODE_ENV === "production" ? "; Secure" : ""
+      }`
+    );
+
+    // Retorna os dados do usuário (excluindo a senha)
+    // Certifique-se de que o objeto do usuário seja tratado corretamente
+    const userObj = user.toJSON ? user.toJSON() : { ...user.dataValues };
+
+    // Remova a senha do objeto do usuário
+    const { password: _, ...userWithoutPassword } = userObj;
+
     return res.status(200).json({
       success: true,
-      user: authResult.user,
+      message: "Login realizado com sucesso",
+      user: userWithoutPassword,
+      token,
     });
   } catch (error) {
-    console.error("Erro ao processar login:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro interno do servidor" });
+    console.error("Erro de login:", error);
+    return res.status(500).json({ message: "Erro ao processar a solicitação" });
   }
 }
