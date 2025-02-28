@@ -1,5 +1,9 @@
 import { Sequelize, Options } from "sequelize";
 
+// Inicializa o pg explicitamente antes do Sequelize usá-lo
+// @ts-ignore - Ignora erro de tipo para importação CommonJS
+import pgInit from "./pg-init";
+
 // Configuração da conexão com o banco de dados Neon (PostgreSQL)
 const DATABASE_URL =
   process.env.DATABASE_URL ||
@@ -7,6 +11,7 @@ const DATABASE_URL =
 
 // Log para debug
 console.log("DATABASE_URL:", DATABASE_URL.substring(0, 30) + "...");
+console.log("pg module loaded:", !!pgInit);
 
 // Ambiente de execução
 const isProduction = process.env.NODE_ENV === "production";
@@ -14,6 +19,7 @@ const isProduction = process.env.NODE_ENV === "production";
 // Opções de configuração do Sequelize para Neon DB
 const sequelizeOptions: Options = {
   dialect: "postgres",
+  dialectModule: pgInit, // Usa o módulo pg já inicializado
   dialectOptions: {
     ssl: {
       require: true,

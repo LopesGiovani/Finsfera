@@ -4,11 +4,16 @@
       "src": "package.json",
       "use": "@vercel/next",
       "config": {
-        "installCommand": "npm install && npm install pg pg-hstore @types/jsonwebtoken @types/bcrypt @svgr/webpack tailwindcss postcss autoprefixer --no-save"
+        "installCommand": "npm install && npm install pg@8.11.3 pg-hstore@2.3.4 @types/pg --force --no-save"
       }
     }
   ],
   "env": {
     "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max_old_space_size=4096"
+    }
   }
 }
