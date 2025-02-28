@@ -31,16 +31,6 @@ export default async function handler(
       return res.status(401).json({ message: "Credenciais inválidas" });
     }
 
-    // Verifica se o usuário está ativo
-    if (user.status !== "active") {
-      return res.status(401).json({
-        message:
-          user.status === "pending"
-            ? "Sua conta está pendente de ativação"
-            : "Sua conta está desativada",
-      });
-    }
-
     // Verifica a senha
     const isPasswordValid = await user.checkPassword(password);
 
@@ -53,7 +43,6 @@ export default async function handler(
       {
         id: user.id,
         email: user.email,
-        role: user.role,
       },
       JWT_SECRET,
       { expiresIn: "24h" }

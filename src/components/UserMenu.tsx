@@ -1,23 +1,40 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import {
-  Bars3Icon,
   UserIcon,
-  QuestionMarkCircleIcon,
-  MapPinIcon,
-  MegaphoneIcon,
-  DocumentTextIcon,
-  ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu() {
+  const { user, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Obter a inicial do nome do usuário para o avatar
+  const getInitials = () => {
+    if (!user?.name) return "?";
+    return user.name.charAt(0).toUpperCase();
+  };
+
+  // Função para lidar com o logout
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      // Não é necessário redirecionar aqui, o AuthContext já faz isso
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <Menu as="div" className="relative">
       <Menu.Button className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-800 text-sm">
-          GL
+        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 text-sm font-medium">
+          {getInitials()}
         </div>
       </Menu.Button>
 
@@ -33,127 +50,31 @@ export function UserMenu() {
         <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
           <div className="p-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-800">
-                GL
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 font-medium">
+                {getInitials()}
               </div>
               <div>
-                <div className="font-medium">giovani oliveira lopes filho</div>
+                <div className="font-medium">
+                  {user?.name || "Carregando..."}
+                </div>
                 <div className="text-sm text-gray-500">
-                  giovanioliveiramcp@gmail.com
+                  {user?.email || "..."}
                 </div>
               </div>
             </div>
-
-            {/* Refer & Earn */}
-            <Link
-              href="#"
-              className="flex items-center gap-3 p-3 mb-2 rounded-lg border border-blue-100 bg-blue-50 hover:bg-blue-100 transition-colors"
-            >
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-blue-500">
-                <svg
-                  className="w-5 h-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4.5v15m7.5-7.5h-15"
-                  />
-                </svg>
-              </div>
-              <div>
-                <div className="font-medium text-blue-600">Refer & Earn</div>
-                <div className="text-sm text-gray-600">
-                  Invite friends and get rewarded
-                </div>
-              </div>
-            </Link>
-
-            <Menu.Item>
-              {({ active }) => (
-                <Link
-                  href="/settings"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
-                    active ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <Bars3Icon className="w-5 h-5" />
-                  <span>User Settings</span>
-                </Link>
-              )}
-            </Menu.Item>
-
-            <Menu.Item>
-              {({ active }) => (
-                <Link
-                  href="/support"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
-                    active ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <QuestionMarkCircleIcon className="w-5 h-5" />
-                  <span>Contact Support</span>
-                </Link>
-              )}
-            </Menu.Item>
-
-            <Menu.Item>
-              {({ active }) => (
-                <Link
-                  href="/knowledge-base"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
-                    active ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <MapPinIcon className="w-5 h-5" />
-                  <span>Knowledge Base</span>
-                </Link>
-              )}
-            </Menu.Item>
-
-            <Menu.Item>
-              {({ active }) => (
-                <Link
-                  href="/whats-new"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
-                    active ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <MegaphoneIcon className="w-5 h-5" />
-                  <span>What's New?</span>
-                </Link>
-              )}
-            </Menu.Item>
 
             <div className="border-t my-2" />
 
             <Menu.Item>
               {({ active }) => (
                 <Link
-                  href="/terms"
+                  href="/profile"
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
                     active ? "bg-gray-50" : ""
                   }`}
                 >
-                  <DocumentTextIcon className="w-5 h-5" />
-                  <span>Terms of Service</span>
-                </Link>
-              )}
-            </Menu.Item>
-
-            <Menu.Item>
-              {({ active }) => (
-                <Link
-                  href="/privacy"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
-                    active ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <ShieldCheckIcon className="w-5 h-5" />
-                  <span>Privacy Policy</span>
+                  <UserIcon className="w-5 h-5" />
+                  <span>Perfil</span>
                 </Link>
               )}
             </Menu.Item>
@@ -161,12 +82,23 @@ export function UserMenu() {
             <Menu.Item>
               {({ active }) => (
                 <button
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 ${
-                    active ? "bg-gray-50" : ""
-                  }`}
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${
+                    isLoggingOut ? "text-gray-400" : "text-gray-700"
+                  } ${active && !isLoggingOut ? "bg-gray-50" : ""}`}
                 >
                   <ArrowRightOnRectangleIcon className="w-5 h-5" />
-                  <span>Logout</span>
+                  <span>
+                    {isLoggingOut ? (
+                      <div className="flex items-center gap-2">
+                        <span>Saindo...</span>
+                        <div className="w-4 h-4 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+                      </div>
+                    ) : (
+                      "Logout"
+                    )}
+                  </span>
                 </button>
               )}
             </Menu.Item>

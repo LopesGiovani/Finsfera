@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { FinsAIChat } from "./FinsAIChat";
 import { UserMenu } from "./UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function TopBar() {
   const [isFinsAIOpen, setIsFinsAIOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <>
@@ -15,7 +17,7 @@ export function TopBar() {
           {/* Lado Esquerdo */}
           <div className="flex items-center gap-2">
             <span className="text-2xl">👋</span>
-            <span className="text-gray-700">Hello giovani oliveira!</span>
+            <span className="text-gray-700">Bem vindo {user?.name || ""}!</span>
           </div>
 
           {/* Lado Direito */}

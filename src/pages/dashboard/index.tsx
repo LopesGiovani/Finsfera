@@ -3,6 +3,9 @@ import { PLSection } from "@/components/dashboard/PLSection";
 import { CashFlowSection } from "../../components/dashboard/CashFlowSection";
 import { FinancialRatios } from "../../components/dashboard/FinancialRatios";
 import { InvoiceSection } from "../../components/dashboard/InvoiceSection";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const clients = [
   {
@@ -29,14 +32,27 @@ const clients = [
 ];
 
 export default function Dashboard() {
+  const { user, isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    console.log("Dashboard montado - Estado da autenticação:", {
+      isAuthenticated,
+      loading,
+      hasUser: !!user,
+      userData: user,
+    });
+  }, [isAuthenticated, loading, user]);
+
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        <PLSection />
-        <CashFlowSection />
-        <FinancialRatios />
-        <InvoiceSection />
-      </div>
-    </DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="space-y-8">
+          <PLSection />
+          <CashFlowSection />
+          <FinancialRatios />
+          <InvoiceSection />
+        </div>
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }

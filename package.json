@@ -29,6 +29,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "next lint",
+    "create-admin": "node src/scripts/create-admin-user.js",
     "initdb": "node src/scripts/initDB.js",
     "migrate": "node src/scripts/migration.js",
     "generate-secret": "node src/scripts/generate-secret.js",

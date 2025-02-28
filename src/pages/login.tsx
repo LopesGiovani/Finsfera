@@ -2,19 +2,47 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Logo } from "@/components/Logo";
-import { useState, FormEvent } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState, FormEvent, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@exemplo.com");
+  const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
+
+  // Redireciona para o dashboard se já estiver autenticado
+  useEffect(() => {
+    console.log("Login - useEffect de redirecionamento:", {
+      isAuthenticated,
+      authLoading,
+      query: router.query,
+    });
+
+    if (isAuthenticated && !authLoading) {
+      console.log(
+        "Login - Redirecionando para dashboard (usuário já autenticado)"
+      );
+      const returnUrl = (router.query.returnUrl as string) || "/dashboard";
+      console.log("Login - URL de retorno:", returnUrl);
+      router.push(returnUrl);
+    }
+  }, [isAuthenticated, authLoading, router]);
+
+  // Se estiver carregando a autenticação, não mostra nada
+  if (authLoading) {
+    console.log("Login - Mostrando tela de carregamento");
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Carregando...
+      </div>
+    );
+  }
 
   const validateForm = () => {
     let isValid = true;
@@ -43,22 +71,27 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log("Login - handleSubmit iniciado");
 
     // Limpa o erro geral
     setError("");
 
     // Valida o formulário
     if (!validateForm()) {
+      console.log("Login - Formulário inválido");
       return;
     }
 
+    console.log("Login - Formulário validado, iniciando login com:", { email });
     setLoading(true);
 
     try {
+      console.log("Login - Chamando função login");
       // Usa o hook de autenticação para fazer login
       await login(email, password);
-      router.push("/dashboard");
+      console.log("Login - Login concluído com sucesso");
     } catch (err: any) {
+      console.error("Login - Erro durante login:", err);
       // Exibe a mensagem de erro
       setError(
         err.response?.data?.message ||
