@@ -2,6 +2,7 @@
   "dependencies": {
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
+    "@svgr/webpack": "^8.1.0",
     "@tanstack/react-query": "^5.66.9",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
@@ -27,7 +28,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm install pg pg-hstore @types/jsonwebtoken @types/bcrypt --no-save && next build",
+    "build": "npm install pg pg-hstore @types/jsonwebtoken @types/bcrypt @svgr/webpack --no-save && next build",
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node src/scripts/create-admin-user.js",
@@ -37,7 +38,6 @@
     "dev:prod": "cross-env NODE_ENV=production next dev"
   },
   "devDependencies": {
-    "@svgr/webpack": "^8.1.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/sequelize": "^4.28.20",

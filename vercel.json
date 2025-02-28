@@ -4,7 +4,7 @@
       "src": "package.json",
       "use": "@vercel/next",
       "config": {
-        "installCommand": "npm install && npm install pg pg-hstore @types/jsonwebtoken @types/bcrypt --no-save"
+        "installCommand": "npm install && npm install pg pg-hstore @types/jsonwebtoken @types/bcrypt @svgr/webpack --no-save"
       }
     }
   ],
