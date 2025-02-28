@@ -27,7 +27,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm install pg pg-hstore --no-save && next build",
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node src/scripts/create-admin-user.js",

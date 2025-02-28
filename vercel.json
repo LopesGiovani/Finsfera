@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "installCommand": "npm install && npm install pg pg-hstore --no-save"
+      }
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
