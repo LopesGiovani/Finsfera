@@ -100,14 +100,15 @@ export function CadastroUsuario({
     try {
       if (usuarioId) {
         // Atualização de usuário existente
-        const { confirmarSenha, ...dadosAtualizacao } = formData;
+        const { confirmarSenha, senha, ...dadosAtualizacao } = formData;
 
-        // Remover senha se estiver vazia
-        if (!dadosAtualizacao.senha) {
-          delete dadosAtualizacao.senha;
-        }
+        // Adicionar senha apenas se foi fornecida
+        const dadosFinais = {
+          ...dadosAtualizacao,
+          ...(senha ? { senha } : {}),
+        };
 
-        await UsuarioService.atualizarUsuario(usuarioId, dadosAtualizacao);
+        await UsuarioService.atualizarUsuario(usuarioId, dadosFinais);
       } else {
         // Criação de novo usuário
         const { confirmarSenha, ...dadosNovoUsuario } = formData;
