@@ -27,7 +27,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm install pg pg-hstore @types/jsonwebtoken --no-save && next build",
+    "build": "npm install pg pg-hstore @types/jsonwebtoken @types/bcrypt --no-save && next build",
     "start": "next start",
     "lint": "next lint",
     "create-admin": "node src/scripts/create-admin-user.js",
