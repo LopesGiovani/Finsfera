@@ -20,6 +20,9 @@ const nextConfig = {
 
     return config;
   },
+  experimental: {
+    serverComponentsExternalPackages: ["pg", "pg-hstore", "sequelize"],
+  },
 };
 
 module.exports = nextConfig;
