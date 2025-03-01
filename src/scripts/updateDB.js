@@ -185,6 +185,13 @@ async function updateDB() {
       "urgente",
     ]);
 
+    // Criar ENUM para planos de cliente
+    await createEnumIfNotExists("enum_customers_plan", [
+      "prata",
+      "ouro",
+      "vip",
+    ]);
+
     // Verifica e atualiza a tabela users
     await addColumnIfNotExists(
       "users",
@@ -213,27 +220,40 @@ async function updateDB() {
       "TIMESTAMP WITH TIME ZONE"
     );
 
-    // Cria a tabela customers se não existir
-    const createCustomersTableSQL = `
-      CREATE TABLE customers (
-        id SERIAL PRIMARY KEY,
-        "organizationId" INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-        name VARCHAR(255) NOT NULL,
-        document VARCHAR(30) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        phone VARCHAR(30) NOT NULL,
-        address VARCHAR(255) NOT NULL,
-        city VARCHAR(100) NOT NULL,
-        state VARCHAR(2) NOT NULL,
-        "zipCode" VARCHAR(10) NOT NULL,
-        "contactPerson" VARCHAR(255),
-        notes TEXT,
-        active BOOLEAN NOT NULL DEFAULT true,
-        "createdAt" TIMESTAMP WITH TIME ZONE,
-        "updatedAt" TIMESTAMP WITH TIME ZONE
+    // Cria ou atualiza a tabela customers
+    const customersTableExists = await tableExists("customers");
+
+    if (!customersTableExists) {
+      // Criar a tabela se não existir
+      const createCustomersTableSQL = `
+        CREATE TABLE customers (
+          id SERIAL PRIMARY KEY,
+          "organizationId" INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+          name VARCHAR(255) NOT NULL,
+          document VARCHAR(30) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(30) NOT NULL,
+          address VARCHAR(255) NOT NULL,
+          city VARCHAR(100) NOT NULL,
+          state VARCHAR(2) NOT NULL,
+          "zipCode" VARCHAR(10) NOT NULL,
+          "contactPerson" VARCHAR(255),
+          notes TEXT,
+          plan enum_customers_plan NOT NULL DEFAULT 'prata',
+          active BOOLEAN NOT NULL DEFAULT true,
+          "createdAt" TIMESTAMP WITH TIME ZONE,
+          "updatedAt" TIMESTAMP WITH TIME ZONE
+        );
+      `;
+      await createTableIfNotExists("customers", createCustomersTableSQL);
+    } else {
+      // Se a tabela já existir, verifica se o campo plan existe
+      await addColumnIfNotExists(
+        "customers",
+        "plan",
+        "enum_customers_plan NOT NULL DEFAULT 'prata'"
       );
-    `;
-    await createTableIfNotExists("customers", createCustomersTableSQL);
+    }
 
     console.log("Banco de dados atualizado com sucesso!");
   } catch (error) {

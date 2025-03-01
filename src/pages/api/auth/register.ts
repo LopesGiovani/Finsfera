@@ -38,6 +38,8 @@ export default async function handler(
       name,
       email,
       password,
+      role: "assistant", // Definindo o papel padrão
+      organizationId: null, // Será atualizado posteriormente ao associar a uma organização
     });
 
     // Gera o token
@@ -58,6 +60,7 @@ export default async function handler(
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {

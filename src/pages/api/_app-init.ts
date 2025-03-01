@@ -1,20 +1,23 @@
-import User from "./User";
-import Organization from "./Organization";
-import ServiceOrder from "./ServiceOrder";
-import ServiceOrderAttachment from "./ServiceOrderAttachment";
-import Customer from "./Customer";
+// Este arquivo é responsável por inicializar as associações entre modelos
+// Deve ser importado apenas uma vez e em um local que não cause importações circulares
 
-// Associações entre User e Organization
+// Primeiro importamos todos os modelos
+import User from "@/models/User";
+import Organization from "@/models/Organization";
+import ServiceOrder from "@/models/ServiceOrder";
+import ServiceOrderAttachment from "@/models/ServiceOrderAttachment";
+import Customer from "@/models/Customer";
+
+// Defina as associações
+// User e Organization
 User.belongsTo(Organization, {
   foreignKey: "organizationId",
   as: "organization",
 });
 Organization.hasMany(User, { foreignKey: "organizationId", as: "members" });
-
-// Associação de Owner com Organization
 Organization.belongsTo(User, { foreignKey: "ownerId", as: "owner" });
 
-// Associações entre ServiceOrder e Organization
+// ServiceOrder e Organization
 ServiceOrder.belongsTo(Organization, {
   foreignKey: "organizationId",
   as: "organization",
@@ -24,14 +27,13 @@ Organization.hasMany(ServiceOrder, {
   as: "serviceOrders",
 });
 
-// Associações entre ServiceOrder e User (assignedTo)
+// ServiceOrder e User
 ServiceOrder.belongsTo(User, { foreignKey: "assignedToId", as: "assignedTo" });
 User.hasMany(ServiceOrder, {
   foreignKey: "assignedToId",
   as: "assignedServiceOrders",
 });
 
-// Associações entre ServiceOrder e User (assignedBy)
 ServiceOrder.belongsTo(User, {
   foreignKey: "assignedByUserId",
   as: "assignedBy",
@@ -41,7 +43,7 @@ User.hasMany(ServiceOrder, {
   as: "createdServiceOrders",
 });
 
-// Associações entre ServiceOrderAttachment e ServiceOrder
+// ServiceOrderAttachment e ServiceOrder
 ServiceOrderAttachment.belongsTo(ServiceOrder, {
   foreignKey: "serviceOrderId",
   as: "serviceOrder",
@@ -51,7 +53,7 @@ ServiceOrder.hasMany(ServiceOrderAttachment, {
   as: "attachments",
 });
 
-// Associações entre ServiceOrderAttachment e User
+// ServiceOrderAttachment e User
 ServiceOrderAttachment.belongsTo(User, {
   foreignKey: "uploadedById",
   as: "uploadedBy",
@@ -61,7 +63,7 @@ User.hasMany(ServiceOrderAttachment, {
   as: "uploadedAttachments",
 });
 
-// Associações entre Customer e Organization
+// Customer e Organization
 Customer.belongsTo(Organization, {
   foreignKey: "organizationId",
   as: "organization",
@@ -71,7 +73,7 @@ Organization.hasMany(Customer, {
   as: "customers",
 });
 
-// Associações entre ServiceOrder e Customer
+// ServiceOrder e Customer
 ServiceOrder.belongsTo(Customer, {
   foreignKey: "customerId",
   as: "customer",
@@ -81,4 +83,5 @@ Customer.hasMany(ServiceOrder, {
   as: "serviceOrders",
 });
 
+// Exporta todos os modelos inicializados para uso
 export { User, Organization, ServiceOrder, ServiceOrderAttachment, Customer };

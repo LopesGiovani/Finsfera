@@ -20,6 +20,8 @@ async function initDB() {
       name: "Administrador",
       email: "admin@exemplo.com",
       password: "senha123",
+      role: "system_admin",
+      organizationId: null,
     });
     console.log("Usuário admin criado com sucesso!");
 

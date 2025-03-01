@@ -5,6 +5,7 @@ import {
   AuthenticatedRequest,
 } from "@/middleware/authMiddleware";
 import Customer from "@/models/Customer";
+import { CustomerPlan } from "@/types/customer";
 import { Op } from "sequelize";
 
 // Handler para gerenciar clientes
@@ -40,7 +41,7 @@ export default async function handler(
     // GET - Listar clientes
     if (req.method === "GET") {
       const organizationId = user.organizationId;
-      const { search, active } = req.query;
+      const { search, active, plan } = req.query;
 
       // Filtros
       const whereClause: any = {
@@ -65,6 +66,11 @@ export default async function handler(
         whereClause.active = active === "true";
       }
 
+      // Filtro de plano
+      if (plan) {
+        whereClause.plan = plan;
+      }
+
       // Busca clientes
       const customers = await Customer.findAll({
         where: whereClause,
@@ -87,6 +93,8 @@ export default async function handler(
         zipCode,
         contactPerson,
         notes,
+        plan,
+        organizationId: requestedOrgId, // Permitir especificar organizationId na requisição
       } = req.body;
 
       // Validações básicas
@@ -105,11 +113,34 @@ export default async function handler(
         });
       }
 
+      // Validar plano
+      if (plan && !Object.values(CustomerPlan).includes(plan)) {
+        return res.status(400).json({
+          message:
+            "Plano inválido. Os valores permitidos são: prata, ouro, vip",
+        });
+      }
+
+      // Definir o ID da organização
+      let customerOrgId = user.organizationId;
+
+      // Se o usuário é um administrador do sistema e especificou uma organização
+      if (user.role === "system_admin" && requestedOrgId) {
+        customerOrgId = requestedOrgId;
+      }
+
+      // Se ainda não temos uma organização, retornar erro
+      if (!customerOrgId) {
+        return res.status(400).json({
+          message: "É necessário especificar uma organização para o cliente",
+        });
+      }
+
       // Verificar se o documento já existe para esta organização
       const existingCustomer = await Customer.findOne({
         where: {
           document,
-          organizationId: user.organizationId,
+          organizationId: customerOrgId,
         },
       });
 
@@ -131,7 +162,8 @@ export default async function handler(
         zipCode,
         contactPerson: contactPerson || null,
         notes: notes || null,
-        organizationId: user.organizationId,
+        plan: plan || CustomerPlan.PRATA, // Valor padrão é prata
+        organizationId: customerOrgId,
         active: true,
       });
 

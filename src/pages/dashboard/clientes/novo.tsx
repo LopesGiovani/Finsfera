@@ -4,26 +4,14 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-
-interface FormData {
-  name: string;
-  document: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  contactPerson: string;
-  notes: string;
-}
+import { CustomerPlan, CustomerFormData } from "@/types/customer";
 
 export default function NovoClientePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<CustomerFormData>({
     name: "",
     document: "",
     email: "",
@@ -34,6 +22,7 @@ export default function NovoClientePage() {
     zipCode: "",
     contactPerson: "",
     notes: "",
+    plan: CustomerPlan.PRATA,
   });
 
   // Verificar permissões na montagem do componente
@@ -146,6 +135,23 @@ export default function NovoClientePage() {
                   required
                   className="w-full p-2 border rounded-lg"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Plano de Consumo *
+                </label>
+                <select
+                  name="plan"
+                  value={formData.plan}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg"
+                >
+                  <option value={CustomerPlan.PRATA}>Prata</option>
+                  <option value={CustomerPlan.OURO}>Ouro</option>
+                  <option value={CustomerPlan.VIP}>VIP</option>
+                </select>
               </div>
 
               {/* Contato */}

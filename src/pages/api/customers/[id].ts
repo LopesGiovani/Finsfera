@@ -5,6 +5,7 @@ import {
   AuthenticatedRequest,
 } from "@/middleware/authMiddleware";
 import Customer from "@/models/Customer";
+import { CustomerPlan } from "@/types/customer";
 import { Op } from "sequelize";
 
 // Handler para gerenciar um cliente específico
@@ -78,6 +79,7 @@ export default async function handler(
         zipCode,
         contactPerson,
         notes,
+        plan,
         active,
       } = req.body;
 
@@ -94,6 +96,14 @@ export default async function handler(
       ) {
         return res.status(400).json({
           message: "Todos os campos obrigatórios devem ser preenchidos",
+        });
+      }
+
+      // Validar plano
+      if (plan && !Object.values(CustomerPlan).includes(plan)) {
+        return res.status(400).json({
+          message:
+            "Plano inválido. Os valores permitidos são: prata, ouro, vip",
         });
       }
 
@@ -126,6 +136,7 @@ export default async function handler(
         zipCode,
         contactPerson: contactPerson || null,
         notes: notes || null,
+        ...(plan ? { plan } : {}),
         ...(active !== undefined ? { active } : {}),
       };
 

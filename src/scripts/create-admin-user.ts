@@ -27,6 +27,8 @@ async function createAdminUser() {
       name: "Administrador",
       email: "admin@exemplo.com",
       password: "admin123", // A senha será hash automaticamente pelo hook beforeCreate
+      role: "system_admin", // Adicionando a função de administrador do sistema
+      organizationId: null, // Administrador do sistema não está vinculado a uma organização específica
     });
 
     console.log("Usuário administrador criado com sucesso:");
@@ -34,6 +36,7 @@ async function createAdminUser() {
       id: adminUser.id,
       name: adminUser.name,
       email: adminUser.email,
+      role: adminUser.role,
     });
   } catch (error) {
     console.error("Erro ao criar usuário administrador:", error);

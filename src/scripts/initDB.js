@@ -250,6 +250,81 @@ const ServiceOrderAttachment = sequelize.define(
   }
 );
 
+// Modelo: Customer
+const Customer = sequelize.define(
+  "Customer",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    organizationId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "organizations",
+        key: "id",
+      },
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    document: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    state: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    zipCode: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    contactPerson: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    plan: {
+      type: DataTypes.ENUM("prata", "ouro", "vip"),
+      allowNull: false,
+    },
+    active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+  },
+  {
+    tableName: "customers",
+    timestamps: true,
+  }
+);
+
 // Função para inicializar o banco de dados
 async function initDB() {
   try {
@@ -387,6 +462,62 @@ async function initDB() {
       scheduledDate: tomorrow,
     });
     console.log("Ordens de serviço criadas com sucesso!");
+
+    // Cria alguns clientes de exemplo
+    console.log("Criando clientes de exemplo...");
+
+    // Cliente 1
+    await Customer.create({
+      organizationId: organization.id,
+      name: "Empresa ABC Ltda",
+      document: "12.345.678/0001-99",
+      email: "contato@empresaabc.com",
+      phone: "(11) 98765-4321",
+      address: "Av. Paulista, 1000",
+      city: "São Paulo",
+      state: "SP",
+      zipCode: "01310-100",
+      contactPerson: "João Silva",
+      notes: "Cliente preferencial",
+      plan: "ouro",
+      active: true,
+    });
+
+    // Cliente 2
+    await Customer.create({
+      organizationId: organization.id,
+      name: "Comércio XYZ Ltda",
+      document: "98.765.432/0001-10",
+      email: "atendimento@comercioxyz.com",
+      phone: "(11) 91234-5678",
+      address: "Rua Augusta, 500",
+      city: "São Paulo",
+      state: "SP",
+      zipCode: "01305-000",
+      contactPerson: "Maria Oliveira",
+      notes: "Cliente novo",
+      plan: "prata",
+      active: true,
+    });
+
+    // Cliente 3
+    await Customer.create({
+      organizationId: organization.id,
+      name: "Indústria 123 S.A.",
+      document: "45.678.901/0001-23",
+      email: "vendas@industria123.com",
+      phone: "(11) 97890-1234",
+      address: "Rod. Anhanguera, km 25",
+      city: "Osasco",
+      state: "SP",
+      zipCode: "06000-000",
+      contactPerson: "Roberto Ferreira",
+      notes: "Grande cliente",
+      plan: "vip",
+      active: true,
+    });
+
+    console.log("Clientes criados com sucesso!");
 
     console.log("Banco de dados inicializado com sucesso!");
     console.log("\nCredenciais de acesso:");

@@ -7,11 +7,13 @@ import {
   DocumentChartBarIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
+import { CustomerPlan } from "@/types/customer";
 
 interface StatData {
   total: number;
   active: number;
   inactive: number;
+  plans: { plan: CustomerPlan; count: number }[];
   cities: { city: string; count: number }[];
   states: { state: string; count: number }[];
 }
@@ -25,6 +27,7 @@ export default function RelatoriosClientesPage() {
     total: 0,
     active: 0,
     inactive: 0,
+    plans: [],
     cities: [],
     states: [],
   });
@@ -57,6 +60,11 @@ export default function RelatoriosClientesPage() {
           total: 145,
           active: 132,
           inactive: 13,
+          plans: [
+            { plan: CustomerPlan.PRATA, count: 78 },
+            { plan: CustomerPlan.OURO, count: 45 },
+            { plan: CustomerPlan.VIP, count: 22 },
+          ],
           cities: [
             { city: "São Paulo", count: 42 },
             { city: "Rio de Janeiro", count: 35 },
@@ -86,6 +94,45 @@ export default function RelatoriosClientesPage() {
 
     loadStats();
   }, [user, router]);
+
+  // Função para formatar o nome do plano
+  const formatPlanName = (plan: CustomerPlan) => {
+    const planNames = {
+      [CustomerPlan.PRATA]: "Prata",
+      [CustomerPlan.OURO]: "Ouro",
+      [CustomerPlan.VIP]: "VIP",
+    };
+
+    return planNames[plan] || plan;
+  };
+
+  // Função para obter a cor do plano
+  const getPlanColorClass = (plan: CustomerPlan) => {
+    switch (plan) {
+      case CustomerPlan.PRATA:
+        return "bg-gray-100 text-gray-800";
+      case CustomerPlan.OURO:
+        return "bg-yellow-100 text-yellow-800";
+      case CustomerPlan.VIP:
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Função para obter a cor do fundo da barra de progresso do plano
+  const getPlanBarColorClass = (plan: CustomerPlan) => {
+    switch (plan) {
+      case CustomerPlan.PRATA:
+        return "bg-gray-500";
+      case CustomerPlan.OURO:
+        return "bg-yellow-500";
+      case CustomerPlan.VIP:
+        return "bg-purple-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -140,6 +187,44 @@ export default function RelatoriosClientesPage() {
                 <p className="text-sm text-gray-500 mt-1">
                   ({Math.round((stats.inactive / stats.total) * 100)}% do total)
                 </p>
+              </div>
+            </div>
+
+            {/* Distribuição por plano */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-medium text-gray-700 mb-4">
+                Distribuição por Plano
+              </h2>
+              <div className="space-y-4">
+                {stats.plans.map((item) => (
+                  <div key={item.plan} className="flex items-center">
+                    <div className="w-20 font-medium text-gray-700">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPlanColorClass(
+                          item.plan
+                        )}`}
+                      >
+                        {formatPlanName(item.plan)}
+                      </span>
+                    </div>
+                    <div className="flex-grow mx-4">
+                      <div className="relative w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`absolute top-0 left-0 h-full ${getPlanBarColorClass(
+                            item.plan
+                          )}`}
+                          style={{
+                            width: `${(item.count / stats.total) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600 w-24 text-right">
+                      {item.count} (
+                      {Math.round((item.count / stats.total) * 100)}%)
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

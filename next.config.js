@@ -12,7 +12,21 @@ const nextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  webpack(config) {
+  webpack: (config, { isServer }) => {
+    // Se estiver no lado do cliente, faz com que webpack ignore módulos de servidor
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        dns: false,
+        net: false,
+        tls: false,
+      };
+    }
+
     config.module.rules.push({
       test: /\.svg$/,
       use: ["@svgr/webpack"],

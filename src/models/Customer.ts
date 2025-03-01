@@ -1,5 +1,6 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import sequelize from "@/lib/db";
+import { CustomerPlan } from "@/types/customer";
 
 // Interface para definir os atributos do Cliente
 interface CustomerAttributes {
@@ -15,6 +16,7 @@ interface CustomerAttributes {
   zipCode: string;
   contactPerson?: string;
   notes?: string;
+  plan: CustomerPlan;
   active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -24,7 +26,13 @@ interface CustomerAttributes {
 interface CustomerCreationAttributes
   extends Optional<
     CustomerAttributes,
-    "id" | "createdAt" | "updatedAt" | "contactPerson" | "notes" | "active"
+    | "id"
+    | "createdAt"
+    | "updatedAt"
+    | "contactPerson"
+    | "notes"
+    | "active"
+    | "plan"
   > {}
 
 // Classe do modelo de Cliente
@@ -44,6 +52,7 @@ class Customer
   public zipCode!: string;
   public contactPerson?: string;
   public notes?: string;
+  public plan!: CustomerPlan;
   public active!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -108,6 +117,11 @@ Customer.init(
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    plan: {
+      type: DataTypes.ENUM("prata", "ouro", "vip"),
+      allowNull: false,
+      defaultValue: "prata",
     },
     active: {
       type: DataTypes.BOOLEAN,

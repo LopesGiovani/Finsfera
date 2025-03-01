@@ -24,6 +24,41 @@ export interface OS {
   updatedAt: string;
 }
 
+// Interface que mapeia os dados da API para o formato esperado pelo frontend
+export interface ServiceOrderAPI {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  organizationId: number;
+  assignedToId: number;
+  assignedByUserId: number;
+  scheduledDate: string;
+  customerId?: number;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  assignedBy?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  customer?: {
+    id: number;
+    name: string;
+    email: string;
+    document: string;
+    phone: string;
+  };
+}
+
 export interface Cliente {
   id: number;
   nome: string;
@@ -66,32 +101,180 @@ export interface Notificacao {
   createdAt: string;
 }
 
+// Função para mapear os dados da API para o formato esperado pelo frontend
+function mapApiResponseToOS(data: ServiceOrderAPI[]): OS[] {
+  return data.map((order) => ({
+    id: order.id,
+    numero: `OS-${order.id.toString().padStart(4, "0")}`,
+    titulo: order.title,
+    descricao: order.description,
+    status: mapStatus(order.status),
+    cliente: {
+      id: order.customer?.id || 0,
+      nome: order.customer?.name || "Cliente não atribuído",
+      email: order.customer?.email || "",
+      telefone: order.customer?.phone || "",
+    },
+    responsavel: order.assignedTo
+      ? {
+          id: order.assignedTo.id,
+          nome: order.assignedTo.name,
+          email: order.assignedTo.email,
+          cargo: order.assignedTo.role,
+        }
+      : null,
+    prazo: new Date(order.scheduledDate).toLocaleDateString("pt-BR"),
+    valorTotal: 0, // Este valor não está disponível na API atual
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  }));
+}
+
+// Função para mapear os status do backend para o frontend
+function mapStatus(
+  apiStatus: string
+):
+  | "novo"
+  | "em_andamento"
+  | "pausado"
+  | "concluido"
+  | "cancelado"
+  | "faturado" {
+  const statusMap: Record<string, any> = {
+    pendente: "novo",
+    em_andamento: "em_andamento",
+    concluida: "concluido",
+    reprovada: "cancelado",
+    faturado: "faturado",
+  };
+  return statusMap[apiStatus] || "novo";
+}
+
+// Função para mapear os status do frontend para o backend
+function mapStatusToApi(frontendStatus: string): string {
+  const statusMap: Record<string, string> = {
+    novo: "pendente",
+    em_andamento: "em_andamento",
+    concluido: "concluida",
+    cancelado: "reprovada",
+    faturado: "faturado",
+  };
+  return statusMap[frontendStatus] || "pendente";
+}
+
 export const OrdensServicoService = {
   async listar() {
-    const response = await api.get<OS[]>("/ordens-servico");
-    return response.data;
+    try {
+      const response = await api.get<ServiceOrderAPI[]>("/service-orders");
+      console.log("Resposta da API de ordens de serviço:", response.data);
+
+      // Verificar se os dados estão vindo corretamente
+      if (!response.data || !Array.isArray(response.data)) {
+        console.error("Dados inválidos retornados pela API:", response.data);
+        return [];
+      }
+
+      // Mapear os dados para o formato esperado pelo frontend
+      const mappedData = mapApiResponseToOS(response.data);
+      console.log("Dados mapeados:", mappedData);
+
+      return mappedData;
+    } catch (error) {
+      console.error("Erro ao listar ordens de serviço:", error);
+      return [];
+    }
   },
 
   async obter(id: number) {
-    const response = await api.get<OS>(`/ordens-servico/${id}`);
-    return response.data;
+    try {
+      const response = await api.get<ServiceOrderAPI>(`/service-orders/${id}`);
+      // Transformar o objeto único no mesmo formato que a lista
+      return mapApiResponseToOS([response.data])[0];
+    } catch (error) {
+      console.error("Erro ao obter detalhes da ordem de serviço:", error);
+      throw error;
+    }
   },
 
   async criar(dados: Partial<OS>) {
-    const response = await api.post<OS>("/ordens-servico", dados);
-    return response.data;
+    try {
+      // Transformar o formato para o que a API espera
+      const apiData: any = {
+        title: dados.titulo,
+        description: dados.descricao,
+        priority: "media", // Valor padrão
+        assignedToId: dados.responsavel?.id,
+        customerId: dados.cliente?.id,
+      };
+
+      // Adicionar scheduledDate apenas se estiver definido
+      if (dados.prazo) {
+        apiData.scheduledDate = new Date(dados.prazo).toISOString();
+      } else {
+        // Se não houver prazo definido, usar a data atual + 7 dias
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 7);
+        apiData.scheduledDate = defaultDate.toISOString();
+      }
+
+      const response = await api.post<ServiceOrderAPI>(
+        "/service-orders",
+        apiData
+      );
+      console.log("Resposta da criação:", response.data);
+
+      // Retornar a OS transformada
+      return mapApiResponseToOS([response.data])[0];
+    } catch (error) {
+      console.error("Erro ao criar ordem de serviço:", error);
+      throw error;
+    }
   },
 
   async atualizar(id: number, dados: Partial<OS>) {
-    const response = await api.put<OS>(`/ordens-servico/${id}`, dados);
-    return response.data;
+    try {
+      // Transformar o formato para o que a API espera
+      const apiData: any = {
+        title: dados.titulo,
+        description: dados.descricao,
+        priority: "media", // Valor padrão ou manter o atual
+        assignedToId: dados.responsavel?.id,
+        customerId: dados.cliente?.id,
+      };
+
+      // Adicionar scheduledDate apenas se estiver definido
+      if (dados.prazo) {
+        apiData.scheduledDate = new Date(dados.prazo).toISOString();
+      }
+
+      const response = await api.put<ServiceOrderAPI>(
+        `/service-orders/${id}`,
+        apiData
+      );
+
+      // Retornar a OS transformada
+      return mapApiResponseToOS([response.data])[0];
+    } catch (error) {
+      console.error("Erro ao atualizar ordem de serviço:", error);
+      throw error;
+    }
   },
 
   async mudarStatus(id: number, status: string) {
-    const response = await api.patch<OS>(`/ordens-servico/${id}/status`, {
-      status,
-    });
-    return response.data;
+    try {
+      const apiStatus = mapStatusToApi(status);
+      const response = await api.patch<ServiceOrderAPI>(
+        `/service-orders/${id}/status`,
+        {
+          status: apiStatus,
+        }
+      );
+
+      return mapApiResponseToOS([response.data])[0];
+    } catch (error) {
+      console.error("Erro ao mudar status da ordem de serviço:", error);
+      throw error;
+    }
   },
 
   async registrarTempo(

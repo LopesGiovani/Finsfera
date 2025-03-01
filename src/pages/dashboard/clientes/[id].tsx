@@ -4,21 +4,7 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-
-interface CustomerData {
-  id: number;
-  name: string;
-  document: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  contactPerson?: string;
-  notes?: string;
-  active: boolean;
-}
+import { CustomerPlan, CustomerData } from "@/types/customer";
 
 export default function EditarClientePage() {
   const router = useRouter();
@@ -29,6 +15,7 @@ export default function EditarClientePage() {
   const [error, setError] = useState("");
   const [formData, setFormData] = useState<CustomerData>({
     id: 0,
+    organizationId: 0,
     name: "",
     document: "",
     email: "",
@@ -39,6 +26,7 @@ export default function EditarClientePage() {
     zipCode: "",
     contactPerson: "",
     notes: "",
+    plan: CustomerPlan.PRATA,
     active: true,
   });
 
@@ -209,6 +197,23 @@ export default function EditarClientePage() {
                   required
                   className="w-full p-2 border rounded-lg"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Plano de Consumo *
+                </label>
+                <select
+                  name="plan"
+                  value={formData.plan}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg"
+                >
+                  <option value={CustomerPlan.PRATA}>Prata</option>
+                  <option value={CustomerPlan.OURO}>Ouro</option>
+                  <option value={CustomerPlan.VIP}>VIP</option>
+                </select>
               </div>
 
               {/* Contato */}

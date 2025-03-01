@@ -7,6 +7,14 @@ import {
 import User from "@/models/User";
 import bcrypt from "bcrypt";
 
+// Define o tipo para o role do usuário
+type UserRole =
+  | "system_admin"
+  | "owner"
+  | "manager"
+  | "technician"
+  | "assistant";
+
 // Handler para gerenciar um membro específico da equipe
 export default async function handler(
   req: NextApiRequest,
@@ -118,11 +126,20 @@ export default async function handler(
       }
 
       // Preparar dados para atualização
-      const updateData = {};
+      type UpdateData = {
+        name?: string;
+        email?: string;
+        role?: UserRole;
+        canSeeAllOS?: boolean;
+        active?: boolean;
+        password?: string;
+      };
+
+      const updateData: UpdateData = {};
 
       if (name) updateData.name = name;
       if (email) updateData.email = email;
-      if (role) updateData.role = role;
+      if (role) updateData.role = role as UserRole;
       if (canSeeAllOS !== undefined) updateData.canSeeAllOS = canSeeAllOS;
       if (active !== undefined) updateData.active = active;
 
