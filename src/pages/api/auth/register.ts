@@ -40,6 +40,8 @@ export default async function handler(
       password,
       role: "assistant", // Definindo o papel padrão
       organizationId: null, // Será atualizado posteriormente ao associar a uma organização
+      canSeeAllOS: false, // Valor padrão
+      active: true, // Usuário ativo por padrão
     });
 
     // Gera o token
