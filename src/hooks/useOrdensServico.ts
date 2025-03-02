@@ -14,7 +14,24 @@ interface Filtros {
 export function useOrdensServico() {
   return useQuery({
     queryKey: ["ordens-servico"],
-    queryFn: () => OrdensServicoService.listar(),
+    queryFn: async () => {
+      try {
+        // Verifica se há token no localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.warn("Token não encontrado no localStorage");
+        } else {
+          console.log("Token encontrado, comprimento:", token.length);
+        }
+
+        const resultado = await OrdensServicoService.listar();
+        console.log("Resultado da query de ordens de serviço:", resultado);
+        return resultado;
+      } catch (error) {
+        console.error("Erro ao buscar ordens de serviço:", error);
+        throw error;
+      }
+    },
   });
 }
 

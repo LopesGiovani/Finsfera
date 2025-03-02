@@ -1,5 +1,48 @@
+import axios from "axios";
+import { OS, ServiceOrderAPI } from "./ordens-servico";
+
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+});
+
+// Interceptor para adicionar o token de autenticação
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Função para mapear os status do backend para o frontend
+function mapStatus(
+  apiStatus: string
+):
+  | "novo"
+  | "em_andamento"
+  | "pausado"
+  | "concluido"
+  | "cancelado"
+  | "faturado" {
+  const statusMap: Record<string, any> = {
+    pendente: "novo",
+    em_andamento: "em_andamento",
+    concluida: "concluido",
+    reprovada: "cancelado",
+    faturado: "faturado",
+  };
+  return statusMap[apiStatus] || "novo";
+}
+
 // Método corrigido para obter detalhes de uma ordem de serviço
-async function obterCorrigido(id: number) {
+export async function obterCorrigido(id: number) {
   try {
     const response = await api.get<ServiceOrderAPI>(`/service-orders/${id}`);
 

@@ -17,6 +17,9 @@ export default function OrdensServico() {
   const [dateEnd, setDateEnd] = useState("2025-02-19");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Exibir no console as ordens de serviço carregadas para debug
+  console.log("Ordens de serviço carregadas:", ordensServico);
+
   const resumo = {
     emAberto:
       ordensServico?.filter((os: OS) => os.status === "novo").length || 0,
