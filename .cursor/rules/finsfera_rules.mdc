@@ -1,6 +1,11 @@
 ---
 description: 
 globs: 
+alwaysApply: false
+---
+---
+description: 
+globs: 
 ---
 Descrição: Regras específicas para o desenvolvimento da Finsfera
 Globs: src/\*_/_.{js,jsx,ts,tsx}
