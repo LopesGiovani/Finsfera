@@ -68,7 +68,7 @@ export async function obterCorrigido(id: number) {
             cargo: order.assignedTo.role,
           }
         : null,
-      prazo: new Date(order.scheduledDate).toLocaleDateString("pt-BR"),
+      agendamento: new Date(order.scheduledDate).toLocaleDateString("pt-BR"),
       valorTotal: 0, // Este valor não está disponível na API atual
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,

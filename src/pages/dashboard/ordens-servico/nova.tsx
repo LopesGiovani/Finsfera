@@ -6,6 +6,8 @@ import { ItemServico } from "@/components/ordens-servico/ItemServico";
 import { AtribuirResponsavelModal } from "@/components/ordens-servico/AtribuirResponsavelModal";
 import axios from "axios";
 import { useRouter } from "next/router";
+import { toast } from "react-hot-toast";
+import { OrdensServicoService } from "@/services/ordens-servico";
 
 // Interface para os clientes
 interface Cliente {
@@ -38,9 +40,10 @@ export default function NovaOS() {
   // Estados para os campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [prioridade, setPrioridade] = useState("media");
-  const [prazo, setPrazo] = useState("");
-  const [horasEstimadas, setHorasEstimadas] = useState("");
+  const [responsavelId, setResponsavelId] = useState<number | null>(null);
+  const [clienteId, setClienteId] = useState<number | null>(null);
+  const [agendamento, setAgendamento] = useState("");
+  const [valor, setValor] = useState<string>("");
 
   // Estado para indicar quando estamos enviando o formulário
   const [enviando, setEnviando] = useState(false);
@@ -104,8 +107,8 @@ export default function NovaOS() {
       return;
     }
 
-    if (!prazo) {
-      setErro("O prazo é obrigatório");
+    if (!agendamento) {
+      setErro("O agendamento é obrigatório");
       return;
     }
 
@@ -117,10 +120,11 @@ export default function NovaOS() {
       const dadosOS = {
         title: titulo,
         description: descricao,
-        priority: prioridade,
+        priority: "media",
         assignedToId: parseInt(responsavel),
-        scheduledDate: prazo,
+        scheduledDate: agendamento,
         ...(clienteSelecionado ? { customerId: clienteSelecionado } : {}),
+        ...(valor ? { value: parseFloat(valor) } : {}),
       };
 
       // Enviar para a API
@@ -128,6 +132,7 @@ export default function NovaOS() {
 
       // Redirecionar para a lista de ordens de serviço após criação bem-sucedida
       if (response.status === 201) {
+        toast.success("Ordem de serviço criada com sucesso!");
         router.push("/dashboard/ordens-servico");
       }
     } catch (error: any) {
@@ -254,14 +259,28 @@ export default function NovaOS() {
                   </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-                    value={prioridade}
-                    onChange={(e) => setPrioridade(e.target.value)}
+                    value={responsavel || ""}
+                    onChange={(e) => setResponsavel(e.target.value)}
                   >
                     <option value="baixa">Baixa</option>
                     <option value="media">Média</option>
                     <option value="alta">Alta</option>
                     <option value="urgente">Urgente</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    Valor (opcional)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                    placeholder="Digite o valor da OS"
+                    value={valor}
+                    onChange={(e) => setValor(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -332,24 +351,13 @@ export default function NovaOS() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">
-                    Prazo
+                    Agendamento
                   </label>
                   <input
                     type="date"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-                    value={prazo}
-                    onChange={(e) => setPrazo(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    Previsão de Horas
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-                    value={horasEstimadas}
-                    onChange={(e) => setHorasEstimadas(e.target.value)}
+                    value={agendamento}
+                    onChange={(e) => setAgendamento(e.target.value)}
                   />
                 </div>
               </div>

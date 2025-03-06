@@ -60,7 +60,29 @@ export function ComentariosOS({ osId }: ComentariosOSProps) {
 
   const formatarData = (data: string) => {
     try {
-      return formatDistanceToNow(new Date(data), {
+      // Converter a string de data para um objeto Date
+      const dataComentario = new Date(data);
+      
+      // Obter a data atual
+      const agora = new Date();
+      
+      // Calcular a diferença em segundos
+      // Usamos Math.floor para garantir que diferenças negativas (devido a diferenças de fuso horário)
+      // sejam tratadas corretamente
+      const diferencaEmSegundos = Math.floor((agora.getTime() - dataComentario.getTime()) / 1000);
+      
+      // Se a diferença for negativa ou menor que 60 segundos, mostrar "agora"
+      if (diferencaEmSegundos < 60) {
+        return "agora";
+      }
+      
+      // Se a diferença for menor que 5 minutos, mostrar "há poucos minutos"
+      if (diferencaEmSegundos < 300) {
+        return "há poucos minutos";
+      }
+      
+      // Para outros casos, usar formatDistanceToNow
+      return formatDistanceToNow(dataComentario, {
         addSuffix: true,
         locale: ptBR,
       });

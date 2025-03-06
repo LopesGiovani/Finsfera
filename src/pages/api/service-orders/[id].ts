@@ -121,6 +121,8 @@ export default async function handler(
         assignedToId,
         scheduledDate,
         customerId,
+        value,
+        closingLink,
       } = req.body;
 
       // Campos que podem ser atualizados
@@ -129,6 +131,8 @@ export default async function handler(
       if (title) updateData.title = title;
       if (description) updateData.description = description;
       if (priority) updateData.priority = priority;
+      if (closingLink !== undefined) updateData.closingLink = closingLink;
+      if (value !== undefined) updateData.value = value;
 
       // Apenas admin, owner ou manager podem alterar status ou responsável
       if (["system_admin", "owner", "manager"].includes(user.role)) {
@@ -183,10 +187,8 @@ export default async function handler(
         ],
       });
 
-      return res.status(200).json({
-        message: "Ordem de serviço atualizada com sucesso",
-        serviceOrder: updatedServiceOrder,
-      });
+      // Garantir que estamos retornando apenas o serviceOrder e não um objeto mais complexo
+      return res.status(200).json(updatedServiceOrder);
     }
 
     // DELETE - Excluir ordem de serviço

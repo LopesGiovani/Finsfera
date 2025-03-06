@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
@@ -68,8 +68,12 @@ export function StatusOS({
   return (
     <Menu as="div" className="relative inline-block text-left">
       {({ open }) => {
-        // Controlar estado do menu
-        if (open !== isMenuOpen) setIsMenuOpen(open);
+        // Usar useEffect para atualizar o estado após a renderização
+        useEffect(() => {
+          if (open !== isMenuOpen) {
+            setIsMenuOpen(open);
+          }
+        }, [open]);
 
         return (
           <>

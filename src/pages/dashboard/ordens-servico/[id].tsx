@@ -4,10 +4,9 @@ import {
   ChevronLeftIcon,
   ClockIcon,
   ChatBubbleLeftIcon,
-  CloudArrowUpIcon,
-  ArrowPathIcon,
   PencilIcon,
   CheckIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { TimelineOS } from "@/components/ordens-servico/TimelineOS";
@@ -15,7 +14,6 @@ import { ComentariosOS } from "@/components/ordens-servico/ComentariosOS";
 import { StatusOS } from "@/components/ordens-servico/StatusOS";
 import { RegistrarTempoModal } from "@/components/ordens-servico/RegistrarTempoModal";
 import { GerarFaturaModal } from "@/components/ordens-servico/GerarFaturaModal";
-import { UploadArquivos } from "@/components/ordens-servico/UploadArquivos";
 import { useRouter } from "next/router";
 import {
   useOrdemServico,
@@ -23,9 +21,6 @@ import {
   useRegistrarTempo,
   useGerarFatura,
   useEventosOS,
-  useLimparDadosOS,
-  useVerificarIntegridadeDados,
-  useOrdensServico,
 } from "@/hooks/useOrdensServico";
 import { OrdensServicoService, OS } from "@/services/ordens-servico";
 import { formatarMoeda, formatarData } from "@/utils/formatters";
@@ -50,12 +45,16 @@ const DetalhesTab = ({ os }: TabProps) => (
         <span className="ml-2">{os?.status}</span>
       </div>
       <div>
-        <span className="font-medium">Valor Total:</span>
-        <span className="ml-2">{formatarMoeda(os?.valorTotal || 0)}</span>
+        <span className="font-medium">Responsável:</span>
+        <span className="ml-2">{os?.responsavel?.nome || "Não atribuído"}</span>
       </div>
       <div>
-        <span className="font-medium">Prazo:</span>
-        <span className="ml-2">{formatarData(os?.prazo)}</span>
+        <span className="font-medium">Agendamento:</span>
+        <span className="ml-2">{os?.agendamento ? formatarData(os.agendamento) : "Não definido"}</span>
+      </div>
+      <div>
+        <span className="font-medium">Valor:</span>
+        <span className="ml-2">{os?.valorTotal !== undefined ? formatarMoeda(os.valorTotal) : "Não definido"}</span>
       </div>
     </div>
   </div>
@@ -75,6 +74,29 @@ const ComentariosTab = ({ os }: TabProps) => (
   </div>
 );
 
+// Função para converter data do formato DD/MM/YYYY para YYYY-MM-DD
+const converterDataParaFormatoInput = (dataString: string): string => {
+  try {
+    // Verificar se a data já está no formato YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+      return dataString;
+    }
+    
+    // Tentar converter do formato DD/MM/YYYY para YYYY-MM-DD
+    const partes = dataString.split('/');
+    if (partes.length === 3) {
+      const [dia, mes, ano] = partes;
+      return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+    
+    // Se não conseguir converter, retornar string vazia
+    return '';
+  } catch (error) {
+    console.error("Erro ao converter data:", error);
+    return '';
+  }
+};
+
 export default function VisualizarOS() {
   const router = useRouter();
   const { id: osId } = router.query;
@@ -82,20 +104,17 @@ export default function VisualizarOS() {
     data: os,
     isLoading,
     error,
-  } = useOrdemServico(osId ? String(osId) : "");
+    refetch
+  } = useOrdemServico(osId ? Number(osId) : 0);
   const { mutate: mudarStatus } = useMudarStatusOS();
   const { mutate: registrarTempo } = useRegistrarTempo();
   const { mutate: gerarFatura } = useGerarFatura();
   const { data: eventos, isLoading: isLoadingEventos } = useEventosOS(
     osId ? Number(osId) : 0
   );
-  const { limparDados } = useLimparDadosOS();
-  const { verificarIntegridade } = useVerificarIntegridadeDados();
-  const { atualizar } = useOrdensServico();
 
   // Estado local otimista da OS que podemos atualizar mesmo quando a API falha
   const [localOS, setLocalOS] = useState<typeof os | null>(null);
-  const [isLimpando, setIsLimpando] = useState(false);
 
   // Combinar os dados da API com os dados locais (os locais têm prioridade)
   const osData = useMemo(() => {
@@ -124,16 +143,19 @@ export default function VisualizarOS() {
   const [activeTab, setActiveTab] = useState<
     "detalhes" | "timeline" | "comentarios" | "edicao"
   >("detalhes");
-  const [isRegistrarTempoModalOpen, setIsRegistrarTempoModalOpen] =
-    useState(false);
+  const [isRegistrarTempoModalOpen, setIsRegistrarTempoModalOpen] = useState(false);
   const [isGerarFaturaModalOpen, setIsGerarFaturaModalOpen] = useState(false);
+
+  // Estado para o link externo
+  const [linkExterno, setLinkExterno] = useState("");
+  const [isAdicionandoLink, setIsAdicionandoLink] = useState(false);
 
   // Estado para o formulário de edição
   const [editForm, setEditForm] = useState({
     titulo: "",
     descricao: "",
     valorTotal: 0,
-    prazo: "",
+    agendamento: "",
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -156,74 +178,26 @@ export default function VisualizarOS() {
   };
 
   const handleChangeStatus = (novoStatus: string) => {
+    if (!osId) return;
+    
     setIsChangingStatus(true);
 
-    // Criar uma cópia local da OS com o status atualizado
-    if (osData) {
-      const updatedOS = {
-        ...osData,
-        status: novoStatus as
-          | "novo"
-          | "em_andamento"
-          | "pausado"
-          | "concluido"
-          | "cancelado"
-          | "faturado",
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Atualizar o estado local imediatamente para feedback instantâneo
-      setLocalOS(updatedOS);
-    }
-
     mudarStatus(
-      { id, status: novoStatus },
+      { id: Number(osId), status: novoStatus },
       {
         onSuccess: (data) => {
           setIsChangingStatus(false);
+
           // Atualizar o estado local com os dados da API
           setLocalOS(data);
           refetch(); // Recarregar os dados da OS
         },
         onError: () => {
           setIsChangingStatus(false);
-          // Manter o estado local atualizado mesmo com falha na API
-          toast.error(
-            "Erro ao salvar no servidor. O status foi salvo localmente e será sincronizado quando possível.",
-            { duration: 5000 }
-          );
+          toast.error(`Não foi possível alterar o status para ${novoStatus}`);
         },
       }
     );
-  };
-
-  const handleLimparCache = async () => {
-    setIsLimpando(true);
-    try {
-      const resultado = await limparDados();
-      if (resultado.success) {
-        toast.success("Dados em cache limpos com sucesso!");
-        // Limpar o estado local também
-        setLocalOS(null);
-      } else {
-        toast.error("Erro ao limpar dados em cache");
-      }
-    } catch (error) {
-      console.error("Erro ao limpar cache:", error);
-      toast.error("Ocorreu um erro ao limpar o cache");
-    } finally {
-      setIsLimpando(false);
-    }
-  };
-
-  const handleSincronizarDados = async () => {
-    try {
-      await verificarIntegridade();
-      // A OS será atualizada automaticamente pelos eventos do React Query
-    } catch (error) {
-      console.error("Erro ao sincronizar dados:", error);
-      toast.error("Ocorreu um erro ao sincronizar os dados");
-    }
   };
 
   // Inicializar formulário quando os dados chegarem
@@ -233,20 +207,31 @@ export default function VisualizarOS() {
         titulo: os.titulo,
         descricao: os.descricao,
         valorTotal: os.valorTotal,
-        prazo: os.prazo,
+        agendamento: converterDataParaFormatoInput(os.agendamento),
       });
     }
   }, [os]);
 
   // Função para salvar as alterações
   const handleSave = async () => {
+    if (!osId) return;
+    
     try {
-      await OrdensServicoService.atualizar(id, editForm);
+      // Criar uma cópia do formulário para enviar à API
+      const dadosParaEnviar = {
+        ...editForm,
+        // Não precisamos converter o agendamento, pois já está no formato correto para a API
+      };
+      
+      await OrdensServicoService.atualizar(Number(osId), dadosParaEnviar);
       toast.success("OS atualizada com sucesso!");
       setIsEditing(false);
+      
+      // Recarregar os dados da OS
+      refetch();
     } catch (error) {
       console.error("Erro ao atualizar OS:", error);
-      toast.error("Erro ao atualizar OS");
+      toast.error("Não foi possível atualizar a OS");
     }
   };
 
@@ -254,10 +239,40 @@ export default function VisualizarOS() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setEditForm((prev) => ({
-      ...prev,
-      [name]: name === "valorTotal" ? parseFloat(value) || 0 : value,
-    }));
+    
+    // Processar o valor com base no nome do campo
+    if (name === "valorTotal") {
+      // Para o campo de valor, converter para número
+      setEditForm((prev) => ({
+        ...prev,
+        [name]: parseFloat(value) || 0,
+      }));
+    } else {
+      // Para outros campos, usar o valor como está
+      setEditForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  // Função para adicionar/atualizar o link externo
+  const handleSalvarLink = async () => {
+    if (!osId) return;
+    
+    try {
+      setIsAdicionandoLink(true);
+      await OrdensServicoService.atualizar(Number(osId), { 
+        closingLink: linkExterno 
+      });
+      toast.success("Link adicionado com sucesso!");
+      refetch(); // Recarregar os dados da OS
+    } catch (error) {
+      console.error("Erro ao salvar link:", error);
+      toast.error("Não foi possível salvar o link");
+    } finally {
+      setIsAdicionandoLink(false);
+    }
   };
 
   const tabs = [
@@ -309,12 +324,12 @@ export default function VisualizarOS() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Prazo
+              Agendamento
             </label>
             <Input
               type="date"
-              name="prazo"
-              value={editForm.prazo}
+              name="agendamento"
+              value={editForm.agendamento}
               onChange={handleInputChange}
               className="mt-1"
             />
@@ -389,46 +404,6 @@ export default function VisualizarOS() {
             )}
           </div>
         </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleSincronizarDados}
-            disabled={isVerificando}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"
-          >
-            <CloudArrowUpIcon
-              className={`w-5 h-5 ${isVerificando ? "animate-pulse" : ""}`}
-            />
-            {isVerificando ? "Sincronizando..." : "Sincronizar"}
-          </button>
-          <button
-            onClick={handleLimparCache}
-            disabled={isLimpando}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"
-          >
-            <ArrowPathIcon
-              className={`w-5 h-5 ${isLimpando ? "animate-spin" : ""}`}
-            />
-            {isLimpando ? "Limpando..." : "Atualizar Dados"}
-          </button>
-        </div>
-
-        {/* Alerta de estado de sincronização se houver modificações locais */}
-        {os._statusAlteradoOffline && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <p className="text-yellow-700 flex items-center gap-2">
-              <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full"></span>
-              Esta ordem de serviço tem alterações locais que ainda não foram
-              sincronizadas com o servidor.
-            </p>
-            <button
-              onClick={handleSincronizarDados}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
-            >
-              Tentar sincronizar agora
-            </button>
-          </div>
-        )}
 
         <div className="bg-white rounded-xl overflow-hidden mb-8">
           <div className="border-b border-gray-100">
@@ -512,8 +487,8 @@ export default function VisualizarOS() {
                       </p>
                     </div>
                     <div>
-                      <h3 className="text-sm text-gray-500">Prazo</h3>
-                      <p className="font-medium">{os.prazo}</p>
+                      <h3 className="text-sm text-gray-500">Agendamento</h3>
+                      <p className="font-medium">{os.agendamento}</p>
                     </div>
                     <div>
                       <h3 className="text-sm text-gray-500">Valor</h3>
@@ -524,14 +499,54 @@ export default function VisualizarOS() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6">
-                  <h2 className="text-lg font-medium mb-4">Descrição</h2>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h2 className="text-lg font-medium mb-2">Detalhes</h2>
                   <p className="text-gray-600">{os.descricao}</p>
                 </div>
-
+                
                 <div className="bg-white rounded-xl p-6">
-                  <h2 className="text-lg font-medium mb-4">Arquivos</h2>
-                  <UploadArquivos osId={id} />
+                  <h2 className="text-lg font-medium mb-4">Link Externo</h2>
+                  <div className="space-y-4">
+                    {localOS?.closingLink ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-500">Link atual:</p>
+                        <a 
+                          href={localOS.closingLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline flex items-center gap-2"
+                        >
+                          <LinkIcon className="h-4 w-4" />
+                          {localOS.closingLink}
+                        </a>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">Nenhum link adicionado ainda.</p>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="link-externo" className="text-sm font-medium text-gray-700">
+                        {localOS?.closingLink ? 'Atualizar link' : 'Adicionar link'}:
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="link-externo"
+                          type="text"
+                          value={linkExterno}
+                          onChange={(e) => setLinkExterno(e.target.value)}
+                          placeholder="https://exemplo.com/documento"
+                          className="px-3 py-2 border border-gray-300 rounded-lg flex-grow text-sm"
+                        />
+                        <button
+                          onClick={handleSalvarLink}
+                          disabled={isAdicionandoLink || !linkExterno}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {isAdicionandoLink ? 'Salvando...' : 'Salvar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -543,7 +558,7 @@ export default function VisualizarOS() {
               />
             )}
 
-            {activeTab === "comentarios" && <ComentariosOS osId={id} />}
+            {activeTab === "comentarios" && osId && <ComentariosOS osId={Number(osId)} />}
 
             {activeTab === "edicao" && (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -631,16 +646,15 @@ export default function VisualizarOS() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Prazo
+                        Agendamento
                       </label>
                       <input
                         type="date"
-                        value={editForm.prazo}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, prazo: e.target.value })
-                        }
-                        disabled={!isEditing}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                        id="agendamento"
+                        name="agendamento"
+                        value={editForm.agendamento}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       />
                     </div>
                   </div>

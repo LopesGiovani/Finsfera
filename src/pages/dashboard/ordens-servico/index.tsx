@@ -7,14 +7,10 @@ import {
   ChevronDownIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
-  ArrowPathIcon,
-  CloudArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import {
   useOrdensServicoFiltros,
-  useLimparDadosOS,
-  useVerificarIntegridadeDados,
 } from "@/hooks/useOrdensServico";
 import { StatusOS } from "@/components/ordens-servico/StatusOS";
 import { formatarMoeda, formatarData } from "@/utils/formatters";
@@ -24,13 +20,9 @@ import { toast } from "react-hot-toast";
 export default function OrdensServico() {
   const { data, isLoading, filtros, atualizarFiltros, pagina, setPagina } =
     useOrdensServicoFiltros();
-  const { limparDados } = useLimparDadosOS();
-  const { verificarIntegridade, isVerificando } =
-    useVerificarIntegridadeDados();
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
-  const [isLimpando, setIsLimpando] = useState(false);
 
   // Efeito para aplicar busca após digitar
   useEffect(() => {
@@ -79,63 +71,12 @@ export default function OrdensServico() {
     total: data?.total || 0,
   };
 
-  // Função para limpar dados em cache e atualizar a lista
-  const handleLimparCache = async () => {
-    setIsLimpando(true);
-    try {
-      const resultado = await limparDados();
-      if (resultado.success) {
-        toast.success("Dados em cache limpos com sucesso!");
-        // Forçar recarregamento da lista
-        atualizarFiltros({ ...filtros });
-      } else {
-        toast.error("Erro ao limpar dados em cache");
-      }
-    } catch (error) {
-      console.error("Erro ao limpar cache:", error);
-      toast.error("Ocorreu um erro ao limpar o cache");
-    } finally {
-      setIsLimpando(false);
-    }
-  };
-
-  // Função para sincronizar dados
-  const handleSincronizarDados = async () => {
-    try {
-      await verificarIntegridade();
-      // A atualização da lista é feita dentro do hook pelo invalidateQueries
-    } catch (error) {
-      console.error("Erro ao sincronizar dados:", error);
-      toast.error("Ocorreu um erro ao sincronizar os dados");
-    }
-  };
-
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-medium">Ordens de Serviço</h1>
           <div className="flex gap-3">
-            <button
-              onClick={handleSincronizarDados}
-              disabled={isVerificando}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"
-            >
-              <CloudArrowUpIcon
-                className={`w-5 h-5 ${isVerificando ? "animate-pulse" : ""}`}
-              />
-              {isVerificando ? "Sincronizando..." : "Sincronizar"}
-            </button>
-            <button
-              onClick={handleLimparCache}
-              disabled={isLimpando}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center gap-2 hover:bg-gray-50"
-            >
-              <ArrowPathIcon
-                className={`w-5 h-5 ${isLimpando ? "animate-spin" : ""}`}
-              />
-              {isLimpando ? "Limpando..." : "Atualizar Dados"}
-            </button>
             <Link href="/dashboard/ordens-servico/relatorios">
               <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm flex items-center gap-2">
                 Relatórios
@@ -318,7 +259,7 @@ export default function OrdensServico() {
                 <th className="py-4 px-6 font-medium">Cliente</th>
                 <th className="py-4 px-6 font-medium">Responsável</th>
                 <th className="py-4 px-6 font-medium">Status</th>
-                <th className="py-4 px-6 font-medium">Prazo</th>
+                <th className="py-4 px-6 font-medium">Agendamento</th>
                 <th className="py-4 px-6 font-medium">Valor</th>
                 <th className="py-4 px-6 font-medium"></th>
               </tr>
@@ -361,7 +302,7 @@ export default function OrdensServico() {
                     <td className="py-4 px-6">
                       <StatusOS status={os.status} />
                     </td>
-                    <td className="py-4 px-6">{os.prazo}</td>
+                    <td className="py-4 px-6">{os.agendamento}</td>
                     <td className="py-4 px-6">
                       {formatarMoeda(os.valorTotal)}
                     </td>

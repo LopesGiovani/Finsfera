@@ -57,7 +57,7 @@ function formatarData(data: string) {
 
 export function UploadArquivos({ osId }: UploadArquivosProps) {
   const { data: arquivos, isLoading, refetch } = useArquivosOS(osId);
-  const { mutateAsync: uploadArquivo, isLoading: isUploading } =
+  const { mutateAsync: uploadArquivo, isPending: isUploading } =
     useUploadArquivoOS();
 
   const [arquivosSelecionados, setArquivosSelecionados] = useState<File[]>([]);

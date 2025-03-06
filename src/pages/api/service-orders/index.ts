@@ -139,6 +139,7 @@ export default async function handler(
         assignedToId,
         scheduledDate,
         customerId,
+        value,
       } = req.body;
 
       // Validações básicas
@@ -185,6 +186,7 @@ export default async function handler(
         scheduledDate: new Date(scheduledDate),
         status: "pendente",
         customerId: customerId || null,
+        value: value || null,
       });
 
       return res.status(201).json({
