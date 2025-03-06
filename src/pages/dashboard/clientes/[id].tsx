@@ -20,7 +20,12 @@ export default function EditarClientePage() {
     document: "",
     email: "",
     phone: "",
-    address: "",
+    mobile: "",
+    company: "",
+    street: "",
+    number: "",
+    complement: "",
+    district: "",
     city: "",
     state: "",
     zipCode: "",
@@ -201,6 +206,19 @@ export default function EditarClientePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Empresa
+                </label>
+                <input
+                  type="text"
+                  name="company"
+                  value={formData.company || ""}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Plano de Consumo *
                 </label>
                 <select
@@ -251,6 +269,19 @@ export default function EditarClientePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Celular
+                </label>
+                <input
+                  type="tel"
+                  name="mobile"
+                  value={formData.mobile || ""}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Pessoa de Contato
                 </label>
                 <input
@@ -267,14 +298,56 @@ export default function EditarClientePage() {
                 <h2 className="text-lg font-medium mb-4 mt-2">Endereço</h2>
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Endereço Completo *
+                  Rua *
                 </label>
                 <input
                   type="text"
-                  name="address"
-                  value={formData.address}
+                  name="street"
+                  value={formData.street || ""}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border rounded-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Número *
+                  </label>
+                  <input
+                    type="text"
+                    name="number"
+                    value={formData.number || ""}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Complemento
+                  </label>
+                  <input
+                    type="text"
+                    name="complement"
+                    value={formData.complement || ""}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bairro *
+                </label>
+                <input
+                  type="text"
+                  name="district"
+                  value={formData.district || ""}
                   onChange={handleChange}
                   required
                   className="w-full p-2 border rounded-lg"

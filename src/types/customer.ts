@@ -13,7 +13,12 @@ export interface CustomerData {
   document: string;
   email: string;
   phone: string;
-  address: string;
+  mobile?: string;
+  company?: string;
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
   city: string;
   state: string;
   zipCode: string;
@@ -31,7 +36,12 @@ export interface CustomerFormData {
   document: string;
   email: string;
   phone: string;
-  address: string;
+  mobile: string;
+  company: string;
+  street: string;
+  number: string;
+  complement: string;
+  district: string;
   city: string;
   state: string;
   zipCode: string;

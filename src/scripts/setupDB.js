@@ -203,7 +203,12 @@ async function createTables() {
         document VARCHAR(30) NOT NULL,
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(30) NOT NULL,
-        address VARCHAR(255) NOT NULL,
+        mobile VARCHAR(30),
+        company VARCHAR(255),
+        street VARCHAR(255) NOT NULL,
+        number VARCHAR(20) NOT NULL,
+        complement VARCHAR(255),
+        district VARCHAR(100) NOT NULL,
         city VARCHAR(100) NOT NULL,
         state VARCHAR(2) NOT NULL,
         "zipCode" VARCHAR(10) NOT NULL,
@@ -326,17 +331,86 @@ async function createSampleData() {
     console.log("Membros da equipe criados com sucesso!");
     
     // Criar clientes de exemplo
-    await sequelize.query(`
-      INSERT INTO customers (
-        "organizationId", name, document, email, phone, address, city, state, "zipCode", "contactPerson", plan
-      ) VALUES 
-        (${organizationId}, 'Cliente Empresa A', '12.345.678/0001-01', 'contato@empresaa.com.br', '(11) 1111-1111', 'Rua A, 123', 'São Paulo', 'SP', '01001-000', 'João Silva', 'prata'),
-        (${organizationId}, 'Cliente Empresa B', '23.456.789/0001-02', 'contato@empresab.com.br', '(11) 2222-2222', 'Rua B, 456', 'São Paulo', 'SP', '02002-000', 'Maria Santos', 'ouro'),
-        (${organizationId}, 'Cliente Empresa C', '34.567.890/0001-03', 'contato@empresac.com.br', '(11) 3333-3333', 'Rua C, 789', 'São Paulo', 'SP', '03003-000', 'Pedro Oliveira', 'vip'),
-        (${organizationId}, 'Cliente Empresa D', '45.678.901/0001-04', 'contato@empresad.com.br', '(11) 4444-4444', 'Rua D, 101', 'São Paulo', 'SP', '04004-000', 'Ana Costa', 'prata'),
-        (${organizationId}, 'Cliente Empresa E', '56.789.012/0001-05', 'contato@empresae.com.br', '(11) 5555-5555', 'Rua E, 112', 'São Paulo', 'SP', '05005-000', 'Lucas Ferreira', 'ouro');
-    `);
-    console.log("Clientes de exemplo criados com sucesso!");
+    const customers = [
+      {
+        organizationId: 1,
+        name: "Empresa ABC Ltda",
+        document: "12.345.678/0001-90",
+        email: "contato@empresaabc.com",
+        phone: "(11) 3333-4444",
+        mobile: "(11) 98765-4321",
+        company: "Empresa ABC",
+        street: "Av. Paulista",
+        number: "1000",
+        complement: "Sala 123",
+        district: "Bela Vista",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "01310-100",
+        contactPerson: "João Silva",
+        notes: "Cliente desde 2020",
+        plan: "ouro",
+        active: true
+      },
+      {
+        organizationId: 1,
+        name: "Maria Oliveira",
+        document: "123.456.789-00",
+        email: "maria@email.com",
+        phone: "(11) 2222-3333",
+        mobile: "(11) 97777-8888",
+        company: "",
+        street: "Rua das Flores",
+        number: "123",
+        complement: "Apto 45",
+        district: "Jardim Europa",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "04500-000",
+        contactPerson: "",
+        notes: "Cliente residencial",
+        plan: "prata",
+        active: true
+      },
+      {
+        organizationId: 1,
+        name: "Tech Solutions S.A.",
+        document: "98.765.432/0001-10",
+        email: "contato@techsolutions.com",
+        phone: "(11) 5555-6666",
+        mobile: "(11) 96666-7777",
+        company: "Tech Solutions",
+        street: "Rua Tecnológica",
+        number: "500",
+        complement: "Andar 10",
+        district: "Vila Olímpia",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "04550-000",
+        contactPerson: "Carlos Mendes",
+        notes: "Cliente VIP",
+        plan: "vip",
+        active: true
+      }
+    ];
+    
+    for (const customer of customers) {
+      await sequelize.query(`
+        INSERT INTO customers (
+          "organizationId", name, document, email, phone, mobile, company,
+          street, number, complement, district, city, state, "zipCode",
+          "contactPerson", notes, plan, active, "createdAt", "updatedAt"
+        ) VALUES (
+          ${customer.organizationId}, '${customer.name}', '${customer.document}',
+          '${customer.email}', '${customer.phone}', '${customer.mobile}', '${customer.company}',
+          '${customer.street}', '${customer.number}', '${customer.complement}', '${customer.district}',
+          '${customer.city}', '${customer.state}', '${customer.zipCode}',
+          '${customer.contactPerson}', '${customer.notes}', '${customer.plan}',
+          ${customer.active}, NOW(), NOW()
+        ) ON CONFLICT DO NOTHING;
+      `);
+    }
+    console.log("Clientes de exemplo criados.");
     
     // Obter IDs dos usuários
     const [userResult] = await sequelize.query(`

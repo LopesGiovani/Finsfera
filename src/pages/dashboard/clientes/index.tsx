@@ -18,6 +18,8 @@ interface Customer {
   document: string;
   email: string;
   phone: string;
+  mobile?: string;
+  company?: string;
   city: string;
   state: string;
   plan: CustomerPlan;
@@ -226,6 +228,11 @@ export default function ClientesPage() {
                       <div className="font-medium text-gray-900">
                         {customer.name}
                       </div>
+                      {customer.company && (
+                        <div className="text-sm text-gray-500">
+                          {customer.company}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {customer.document}
@@ -235,6 +242,11 @@ export default function ClientesPage() {
                       <div className="text-sm text-gray-500">
                         {customer.phone}
                       </div>
+                      {customer.mobile && (
+                        <div className="text-sm text-gray-500">
+                          Cel: {customer.mobile}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {customer.city}/{customer.state}

@@ -7,6 +7,8 @@ import {
 import Customer from "@/models/Customer";
 import { CustomerPlan } from "@/types/customer";
 import { Op } from "sequelize";
+import sequelize from "@/lib/db";
+import { Sequelize } from "sequelize";
 
 // Handler para gerenciar clientes
 export default async function handler(
@@ -87,7 +89,12 @@ export default async function handler(
         document,
         email,
         phone,
-        address,
+        mobile,
+        company,
+        street,
+        number,
+        complement,
+        district,
         city,
         state,
         zipCode,
@@ -103,13 +110,23 @@ export default async function handler(
         !document ||
         !email ||
         !phone ||
-        !address ||
+        !street ||
+        !number ||
+        !district ||
         !city ||
         !state ||
         !zipCode
       ) {
         return res.status(400).json({
           message: "Todos os campos obrigatórios devem ser preenchidos",
+        });
+      }
+
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          message: "Formato de email inválido",
         });
       }
 
@@ -150,27 +167,67 @@ export default async function handler(
           .json({ message: "Já existe um cliente com este documento" });
       }
 
-      // Criar novo cliente
-      const newCustomer = await Customer.create({
-        name,
-        document,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        zipCode,
-        contactPerson: contactPerson || null,
-        notes: notes || null,
-        plan: plan || CustomerPlan.PRATA, // Valor padrão é prata
-        organizationId: customerOrgId,
-        active: true,
-      });
+      try {
+        // Criar novo cliente
+        const newCustomer = await Customer.create({
+          name,
+          document,
+          email,
+          phone,
+          mobile: mobile || null,
+          company: company || null,
+          street,
+          number,
+          complement: complement || null,
+          district,
+          city,
+          state,
+          zipCode,
+          contactPerson: contactPerson || null,
+          notes: notes || null,
+          plan: plan || CustomerPlan.PRATA, // Valor padrão é prata
+          organizationId: customerOrgId,
+          active: true,
+        });
 
-      return res.status(201).json({
-        message: "Cliente adicionado com sucesso",
-        customer: newCustomer,
-      });
+        // Atualizar a coluna address para manter compatibilidade
+        await sequelize.query(`
+          UPDATE customers 
+          SET address = '${street.replace(/'/g, "''")}' 
+          WHERE id = ${newCustomer.id}
+        `);
+
+        return res.status(201).json({
+          message: "Cliente adicionado com sucesso",
+          customer: newCustomer,
+        });
+      } catch (error: any) {
+        console.error("Erro ao criar cliente:", error);
+        
+        // Verificar se é um erro de validação
+        if (error.name === 'SequelizeValidationError') {
+          const validationErrors = error.errors.map((err: any) => ({
+            field: err.path,
+            message: err.message
+          }));
+          
+          return res.status(400).json({
+            message: "Erro de validação",
+            errors: validationErrors
+          });
+        }
+        
+        // Verificar se é um erro de chave única (documento duplicado)
+        if (error.name === 'SequelizeUniqueConstraintError') {
+          return res.status(400).json({
+            message: "Já existe um cliente com este documento ou email"
+          });
+        }
+        
+        return res.status(500).json({ 
+          message: "Erro ao criar cliente. Verifique os dados e tente novamente." 
+        });
+      }
     }
 
     // Método não suportado

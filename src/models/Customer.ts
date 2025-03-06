@@ -9,8 +9,13 @@ interface CustomerAttributes {
   name: string;
   document: string; // CPF ou CNPJ
   email: string;
-  phone: string;
-  address: string;
+  phone: string; // Telefone fixo
+  mobile: string; // Celular
+  company: string; // Empresa
+  street: string; // Rua
+  number: string; // Número
+  complement: string; // Complemento
+  district: string; // Bairro
   city: string;
   state: string;
   zipCode: string;
@@ -33,6 +38,9 @@ interface CustomerCreationAttributes
     | "notes"
     | "active"
     | "plan"
+    | "company"
+    | "mobile"
+    | "complement"
   > {}
 
 // Classe do modelo de Cliente
@@ -46,7 +54,12 @@ class Customer
   public document!: string;
   public email!: string;
   public phone!: string;
-  public address!: string;
+  public mobile!: string;
+  public company!: string;
+  public street!: string;
+  public number!: string;
+  public complement!: string;
+  public district!: string;
   public city!: string;
   public state!: string;
   public zipCode!: string;
@@ -94,7 +107,27 @@ Customer.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    address: {
+    mobile: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    company: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    street: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    number: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    complement: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    district: {
       type: DataTypes.STRING,
       allowNull: false,
     },
