@@ -8,6 +8,19 @@ import {
 import { ServiceOrder, User, Customer } from "@/pages/api/_app-init";
 import { Op } from "sequelize";
 
+// Função para normalizar texto (remover acentos e converter para minúsculas)
+function normalizeText(text: string): string {
+  if (!text) return '';
+  
+  // Converter para minúsculas
+  let normalized = text.toLowerCase();
+  
+  // Remover acentos
+  normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
+  return normalized;
+}
+
 // Handler para gerenciar ordens de serviço
 export default async function handler(
   req: NextApiRequest,
@@ -43,10 +56,11 @@ export default async function handler(
         scheduledDateStart,
         scheduledDateEnd,
         search,
+        page = "1"
       } = req.query;
 
       // Filtros
-      const whereClause: any = {
+      let whereClause: any = {
         ...(user.role !== "system_admin"
           ? { organizationId: user.organizationId }
           : req.query.organizationId
@@ -95,39 +109,141 @@ export default async function handler(
         }
       }
 
-      // Filtro de pesquisa
-      if (search) {
-        const searchTerm = `%${search}%`;
-        whereClause[Op.or] = [
-          { title: { [Op.iLike]: searchTerm } },
-          { description: { [Op.iLike]: searchTerm } },
-        ];
+      // Configurações de include padrão
+      const includeConfig = [
+        {
+          model: User,
+          as: "assignedTo",
+          attributes: ["id", "name", "email", "role"],
+        },
+        {
+          model: User,
+          as: "assignedBy",
+          attributes: ["id", "name", "email", "role"],
+        },
+        {
+          model: Customer,
+          as: "customer",
+          attributes: ["id", "name", "email", "phone", "document"],
+        },
+      ];
+
+      // Configuração para paginação
+      const pageNumber = parseInt(page as string) || 1;
+      const pageSize = 10;
+      const offset = (pageNumber - 1) * pageSize;
+
+      try {
+        let serviceOrders;
+        let totalCount = 0;
+
+        // Se houver termo de busca, fazer uma busca mais abrangente
+        if (search) {
+          const searchTerm = `%${search}%`;
+          
+          // Primeiro, buscar por correspondências diretas
+          const directMatches = await ServiceOrder.findAll({
+            where: {
+              ...whereClause,
+              [Op.or]: [
+                { title: { [Op.iLike]: searchTerm } },
+                { description: { [Op.iLike]: searchTerm } },
+                ...(isNaN(parseInt(search as string)) ? [] : [{ id: parseInt(search as string) }]),
+              ],
+            },
+            include: includeConfig,
+            order: [["createdAt", "DESC"]],
+          });
+          
+          // Segundo, buscar por clientes correspondentes
+          const clientMatches = await ServiceOrder.findAll({
+            where: whereClause,
+            include: [
+              ...includeConfig.slice(0, 2),
+              {
+                model: Customer,
+                as: "customer",
+                where: {
+                  name: { [Op.iLike]: searchTerm },
+                },
+                attributes: ["id", "name", "email", "phone", "document"],
+              },
+            ],
+            order: [["createdAt", "DESC"]],
+          });
+          
+          // Terceiro, buscar por responsáveis correspondentes
+          const assignedToMatches = await ServiceOrder.findAll({
+            where: whereClause,
+            include: [
+              {
+                model: User,
+                as: "assignedTo",
+                where: {
+                  name: { [Op.iLike]: searchTerm },
+                },
+                attributes: ["id", "name", "email", "role"],
+              },
+              includeConfig[1],
+              includeConfig[2],
+            ],
+            order: [["createdAt", "DESC"]],
+          });
+          
+          // Quarto, busca por agendamento (data)
+          const today = new Date();
+          const agendamentoMatches = await ServiceOrder.findAll({
+            where: whereClause,
+            include: includeConfig,
+            order: [["createdAt", "DESC"]],
+          });
+          
+          // Filtrar os resultados do agendamento manualmente
+          const filteredAgendamentoMatches = agendamentoMatches.filter((order: any) => {
+            if (order.scheduledDate) {
+              const date = new Date(order.scheduledDate);
+              const formattedDate = date.toLocaleDateString('pt-BR'); // DD/MM/YYYY
+              return normalizeText(formattedDate).includes(normalizeText(search as string));
+            }
+            return false;
+          });
+          
+          // Combinar resultados e remover duplicatas
+          const allMatches = [...directMatches, ...clientMatches, ...assignedToMatches, ...filteredAgendamentoMatches];
+          const uniqueIds = new Set();
+          const filteredOrders = allMatches.filter(order => {
+            if (uniqueIds.has(order.id)) return false;
+            uniqueIds.add(order.id);
+            return true;
+          });
+          
+          totalCount = filteredOrders.length;
+          
+          // Aplicar paginação manualmente
+          serviceOrders = filteredOrders.slice(offset, offset + pageSize);
+        } else {
+          // Busca padrão sem termo de pesquisa
+          const result = await ServiceOrder.findAndCountAll({
+            where: whereClause,
+            include: includeConfig,
+            order: [["createdAt", "DESC"]],
+            limit: pageSize,
+            offset: offset,
+            distinct: true,
+          });
+          
+          serviceOrders = result.rows;
+          totalCount = result.count;
+        }
+
+        // Adicionar header com total para paginação
+        res.setHeader("X-Total-Count", totalCount.toString());
+        
+        return res.status(200).json(serviceOrders);
+      } catch (error) {
+        console.error("Erro ao buscar ordens de serviço:", error);
+        return res.status(500).json({ message: "Erro interno ao buscar ordens de serviço" });
       }
-
-      // Busca ordens de serviço
-      const serviceOrders = await ServiceOrder.findAll({
-        where: whereClause,
-        order: [["createdAt", "DESC"]],
-        include: [
-          {
-            model: User,
-            as: "assignedTo",
-            attributes: ["id", "name", "email", "role"],
-          },
-          {
-            model: User,
-            as: "assignedBy",
-            attributes: ["id", "name", "email", "role"],
-          },
-          {
-            model: Customer,
-            as: "customer",
-            attributes: ["id", "name", "email", "phone", "document"],
-          },
-        ],
-      });
-
-      return res.status(200).json(serviceOrders);
     }
 
     // POST - Criar ordem de serviço
@@ -139,7 +255,6 @@ export default async function handler(
         assignedToId,
         scheduledDate,
         customerId,
-        value,
       } = req.body;
 
       // Validações básicas
@@ -186,7 +301,6 @@ export default async function handler(
         scheduledDate: new Date(scheduledDate),
         status: "pendente",
         customerId: customerId || null,
-        value: value || null,
       });
 
       return res.status(201).json({

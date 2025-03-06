@@ -40,10 +40,10 @@ export default function NovaOS() {
   // Estados para os campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [prioridade, setPrioridade] = useState("media");
   const [responsavelId, setResponsavelId] = useState<number | null>(null);
   const [clienteId, setClienteId] = useState<number | null>(null);
   const [agendamento, setAgendamento] = useState("");
-  const [valor, setValor] = useState<string>("");
 
   // Estado para indicar quando estamos enviando o formulário
   const [enviando, setEnviando] = useState(false);
@@ -85,6 +85,7 @@ export default function NovaOS() {
 
   const handleAtribuirResponsavel = (userId: string, userData: TeamMember) => {
     setResponsavel(userId);
+    setResponsavelId(parseInt(userId));
     setResponsavelDados(userData);
     setIsAtribuirModalOpen(false);
   };
@@ -120,11 +121,10 @@ export default function NovaOS() {
       const dadosOS = {
         title: titulo,
         description: descricao,
-        priority: "media",
+        priority: prioridade,
         assignedToId: parseInt(responsavel),
         scheduledDate: agendamento,
         ...(clienteSelecionado ? { customerId: clienteSelecionado } : {}),
-        ...(valor ? { value: parseFloat(valor) } : {}),
       };
 
       // Enviar para a API
@@ -259,28 +259,14 @@ export default function NovaOS() {
                   </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-                    value={responsavel || ""}
-                    onChange={(e) => setResponsavel(e.target.value)}
+                    value={prioridade}
+                    onChange={(e) => setPrioridade(e.target.value)}
                   >
                     <option value="baixa">Baixa</option>
                     <option value="media">Média</option>
                     <option value="alta">Alta</option>
                     <option value="urgente">Urgente</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-500 mb-1">
-                    Valor (opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
-                    placeholder="Digite o valor da OS"
-                    value={valor}
-                    onChange={(e) => setValor(e.target.value)}
-                  />
                 </div>
               </div>
             </div>

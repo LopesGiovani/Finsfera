@@ -4,7 +4,6 @@ import {
   PresentationChartBarIcon,
   ClockIcon,
   CheckCircleIcon,
-  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import {
   Chart as ChartJS,
@@ -17,7 +16,6 @@ import {
   Title,
 } from "chart.js";
 import { Pie, Bar } from "react-chartjs-2";
-import { formatarMoeda } from "@/utils/formatters";
 import { OS } from "@/services/ordens-servico";
 
 // Registrando os componentes do Chart.js
@@ -48,8 +46,6 @@ export function DashboardOS() {
       total: 0,
       emAndamento: 0,
       concluidas: 0,
-      faturadas: 0,
-      receitaTotal: 0,
       porStatus: {
         labels: [],
         datasets: [{ data: [], backgroundColor: [] }],
@@ -70,34 +66,20 @@ export function DashboardOS() {
 
     if (ordens.length === 0) return defaultStats;
 
-    // Contadores por status
-    const emAndamento = ordens.filter(
-      (os) => os.status === "em_andamento"
-    ).length;
+    // Contagem por status
+    const novas = ordens.filter((os) => os.status === "novo").length;
+    const emAndamento = ordens.filter((os) => os.status === "em_andamento").length;
     const concluidas = ordens.filter((os) => os.status === "concluido").length;
-    const faturadas = ordens.filter((os) => os.status === "faturado").length;
 
-    // Cálculo da receita total (apenas de OS faturadas)
-    const receitaTotal = ordens
-      .filter((os) => os.status === "faturado")
-      .reduce(
-        (total, os) =>
-          total + (typeof os.valorTotal === "number" ? os.valorTotal : 0),
-        0
-      );
-
-    // Dados para o gráfico de pizza (por status)
-    const porStatus = {
-      labels: ["Novo", "Em Andamento", "Concluído", "Faturado"],
+    // Dados para o gráfico de status
+    const statusData = {
+      labels: ["Novo", "Em Andamento", "Concluído"],
       datasets: [
         {
-          data: [
-            ordens.filter((os) => os.status === "novo").length,
-            emAndamento,
-            concluidas,
-            faturadas,
-          ],
-          backgroundColor: ["#F59E0B", "#3B82F6", "#10B981", "#6366F1"],
+          data: [novas, emAndamento, concluidas],
+          backgroundColor: ["#FCD34D", "#93C5FD", "#6EE7B7"],
+          borderColor: ["#F59E0B", "#3B82F6", "#10B981"],
+          borderWidth: 1,
         },
       ],
     };
@@ -126,9 +108,7 @@ export function DashboardOS() {
       total: ordens.length,
       emAndamento,
       concluidas,
-      faturadas,
-      receitaTotal,
-      porStatus,
+      porStatus: statusData,
       porCliente,
     };
   }, [data]);
@@ -143,7 +123,7 @@ export function DashboardOS() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-start justify-between">
             <div>
@@ -180,20 +160,6 @@ export function DashboardOS() {
             </div>
             <div className="bg-green-100 p-3 rounded-lg">
               <CheckCircleIcon className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Receita</p>
-              <h3 className="text-2xl font-bold mt-1">
-                {formatarMoeda(estatisticas.receitaTotal)}
-              </h3>
-            </div>
-            <div className="bg-indigo-100 p-3 rounded-lg">
-              <BanknotesIcon className="w-6 h-6 text-indigo-600" />
             </div>
           </div>
         </div>

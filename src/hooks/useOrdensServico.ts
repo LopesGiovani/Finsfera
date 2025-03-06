@@ -81,6 +81,8 @@ export function useMudarStatusOS() {
       return OrdensServicoService.mudarStatus(id, status);
     },
     onMutate: async (variables) => {
+      console.log("onMutate:", variables);
+      
       // Cancelar queries em andamento
       await queryClient.cancelQueries({
         queryKey: ["ordens-servico", variables.id],
@@ -91,6 +93,8 @@ export function useMudarStatusOS() {
         "ordens-servico",
         variables.id,
       ]);
+      
+      console.log("Estado anterior da OS:", previousOS);
 
       // Otimisticamente atualizar o cache (interface responde imediatamente)
       if (previousOS) {
@@ -98,104 +102,35 @@ export function useMudarStatusOS() {
           ...previousOS,
           status: variables.status as any,
           updatedAt: new Date().toISOString(),
-          _atualizandoStatus: true, // Flag para indicar que está atualizando
         };
-
+        
+        console.log("Estado atualizado da OS:", updatedOS);
+        
         queryClient.setQueryData(["ordens-servico", variables.id], updatedOS);
-
-        // Também atualizar a lista se estiver em cache
-        const ordensLista = queryClient.getQueryData<any>(["ordens-servico"]);
-        if (Array.isArray(ordensLista)) {
-          const updatedList = ordensLista.map((os) =>
-            os.id === variables.id ? updatedOS : os
-          );
-          queryClient.setQueryData(["ordens-servico"], updatedList);
-        }
       }
 
       return { previousOS };
     },
-    onSuccess: (data, variables, context) => {
-      console.log("Mutação de status completada com sucesso:", data);
-
-      // Atualizar os dados da OS específica no cache
-      queryClient.setQueryData(["ordens-servico", data.id], data);
-
-      // Invalidar a consulta da lista para garantir dados atualizados
-      queryClient.invalidateQueries({ queryKey: ["ordens-servico"] });
-
-      // Invalidar a consulta de eventos para atualizar a timeline
-      queryClient.invalidateQueries({ queryKey: ["eventos-os", data.id] });
-
-      // Notificar usuário sobre o sucesso
-      toast.success(
-        `Status da OS ${data.numero} alterado para ${traduzirStatus(
-          data.status
-        )}`
-      );
-    },
-    onError: (error, variables, context) => {
-      console.error(
-        "Erro na mutação de status:",
-        error,
-        "Variáveis:",
-        variables
-      );
-
-      // Restaurar estado anterior em caso de erro
+    onError: (err, variables, context) => {
+      console.error("Erro ao mudar status:", err);
+      
+      // Em caso de erro, reverter para o estado anterior
       if (context?.previousOS) {
         queryClient.setQueryData(
           ["ordens-servico", variables.id],
           context.previousOS
         );
       }
-
-      // Notificar usuário sobre o erro, mas informar que os dados foram salvos localmente
-      toast.error(
-        `Erro ao atualizar status no servidor. Os dados foram salvos localmente e serão sincronizados quando possível.`
-      );
-
-      // Mesmo com erro, tentamos atualizar o cache com o mock
-      try {
-        // Tenta obter a OS atual do cache
-        const currentOS = queryClient.getQueryData<any>([
-          "ordens-servico",
-          variables.id,
-        ]);
-
-        if (currentOS) {
-          // Cria uma cópia atualizada
-          const updatedOS = {
-            ...currentOS,
-            status: variables.status,
-            updatedAt: new Date().toISOString(),
-            _statusAlteradoOffline: true,
-          };
-
-          // Atualiza o cache mesmo com falha na API
-          console.log("Atualizando cache com dados locais:", updatedOS);
-          queryClient.setQueryData(["ordens-servico", variables.id], updatedOS);
-
-          // Tenta atualizar a lista de ordens também
-          const ordensLista = queryClient.getQueryData<any>(["ordens-servico"]);
-          if (Array.isArray(ordensLista)) {
-            const updatedList = ordensLista.map((os) =>
-              os.id === variables.id ? updatedOS : os
-            );
-            queryClient.setQueryData(["ordens-servico"], updatedList);
-          }
-
-          // Invalidar a consulta de eventos mesmo com erro
-          queryClient.invalidateQueries({
-            queryKey: ["eventos-os", variables.id],
-          });
-        }
-      } catch (cacheError) {
-        console.error("Erro ao tentar atualizar o cache:", cacheError);
-      }
     },
-    onSettled: () => {
-      // Invalidar queries para garantir dados atualizados
+    onSettled: (data, error, variables) => {
+      console.log("onSettled:", { data, error, variables });
+      
+      // Invalidar a query para recarregar os dados atualizados
+      queryClient.invalidateQueries({
+        queryKey: ["ordens-servico", variables.id],
+      });
+      
+      // Invalidar a lista de ordens de serviço
       queryClient.invalidateQueries({ queryKey: ["ordens-servico"] });
     },
   });
@@ -261,30 +196,15 @@ export function useUploadArquivoOS() {
   });
 }
 
-export function useGerarFatura() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      dados,
-    }: {
-      id: number;
-      dados: {
-        vencimento: string;
-        condicaoPagamento: string;
-        observacoes: string;
-      };
-    }) => OrdensServicoService.gerarFatura(id, dados),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ["ordens-servico", id] });
-      queryClient.invalidateQueries({ queryKey: ["ordens-servico"] });
-    },
-  });
-}
-
 export function useOrdensServicoFiltros() {
-  const [filtros, setFiltros] = useState<Filtros>({});
+  const [filtros, setFiltros] = useState<Filtros>({
+    status: [],
+    cliente: "",
+    responsavel: "",
+    dataInicio: "",
+    dataFim: "",
+    busca: "",
+  });
   const [pagina, setPagina] = useState(1);
 
   const { data, isLoading, error } = useQuery({

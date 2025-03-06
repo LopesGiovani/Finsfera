@@ -9,13 +9,21 @@ interface StatusOSProps {
   isChanging?: boolean;
 }
 
+// Mapeamento entre status da API e do frontend
+const statusApiToFrontend = {
+  pendente: "novo",
+  em_andamento: "em_andamento",
+  concluida: "concluido",
+  reprovada: "cancelado"
+};
+
+// Configuração de exibição dos status do frontend
 const statusConfig = {
   novo: { cor: "bg-yellow-100 text-yellow-800", texto: "Em Aberto" },
   em_andamento: { cor: "bg-blue-100 text-blue-800", texto: "Em Andamento" },
   pausado: { cor: "bg-orange-100 text-orange-800", texto: "Pausado" },
   concluido: { cor: "bg-green-100 text-green-800", texto: "Concluído" },
-  cancelado: { cor: "bg-red-100 text-red-800", texto: "Cancelado" },
-  faturado: { cor: "bg-purple-100 text-purple-800", texto: "Faturado" },
+  cancelado: { cor: "bg-red-100 text-red-800", texto: "Cancelado" }
 };
 
 export function StatusOS({
@@ -24,15 +32,23 @@ export function StatusOS({
   tamanho = "md",
   isChanging = false,
 }: StatusOSProps) {
-  const [localStatus, setLocalStatus] = useState(status);
+  // Normalizar o status para o formato do frontend
+  const normalizedStatus = statusApiToFrontend[status as keyof typeof statusApiToFrontend] || status;
+  
+  const [localStatus, setLocalStatus] = useState(normalizedStatus);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Atualizar o status local quando o status das props mudar
+  useEffect(() => {
+    const newNormalizedStatus = statusApiToFrontend[status as keyof typeof statusApiToFrontend] || status;
+    setLocalStatus(newNormalizedStatus);
+  }, [status]);
+
   // Usar status local ou props de acordo com quem está mais atualizado
-  const statusAtual = statusConfig[localStatus as keyof typeof statusConfig] ||
-    statusConfig[status as keyof typeof statusConfig] || {
-      cor: "bg-gray-100 text-gray-800",
-      texto: "Desconhecido",
-    };
+  const statusAtual = statusConfig[localStatus as keyof typeof statusConfig] || {
+    cor: "bg-gray-100 text-gray-800",
+    texto: "Desconhecido",
+  };
 
   // Configurações de tamanho
   const tamanhoConfig = {

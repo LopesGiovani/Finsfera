@@ -59,16 +59,14 @@ export default function OrdensServico() {
     });
   };
 
-  // Cálculo do resumo de acordo com os dados filtrados
-  const resumo = {
-    emAberto: data?.data?.filter((os: OS) => os.status === "novo").length || 0,
+  // Estatísticas
+  const stats = {
+    total: data?.data?.length || 0,
+    novas: data?.data?.filter((os: OS) => os.status === "novo").length || 0,
     emAndamento:
       data?.data?.filter((os: OS) => os.status === "em_andamento").length || 0,
     concluidas:
       data?.data?.filter((os: OS) => os.status === "concluido").length || 0,
-    faturadas:
-      data?.data?.filter((os: OS) => os.status === "faturado").length || 0,
-    total: data?.total || 0,
   };
 
   return (
@@ -94,26 +92,22 @@ export default function OrdensServico() {
         <div className="bg-white rounded-xl p-6 mb-8 shadow-sm">
           <h2 className="text-lg font-medium mb-4">Resumo</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+          <div className="flex flex-wrap gap-4">
+            <div className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors flex-1 min-w-[200px]">
               <h3 className="text-sm text-gray-500 mb-1">TOTAL</h3>
-              <div className="text-2xl font-medium">{resumo.total}</div>
+              <div className="text-2xl font-medium">{stats.total}</div>
             </div>
-            <div className="p-4 border rounded-lg bg-yellow-50 hover:bg-yellow-100 transition-colors">
-              <h3 className="text-sm text-gray-500 mb-1">EM ABERTO</h3>
-              <div className="text-2xl font-medium">{resumo.emAberto}</div>
+            <div className="p-4 border rounded-lg bg-yellow-50 hover:bg-yellow-100 transition-colors flex-1 min-w-[200px]">
+              <h3 className="text-sm text-gray-500 mb-1">NOVAS</h3>
+              <div className="text-2xl font-medium">{stats.novas}</div>
             </div>
-            <div className="p-4 border rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
+            <div className="p-4 border rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors flex-1 min-w-[200px]">
               <h3 className="text-sm text-gray-500 mb-1">EM ANDAMENTO</h3>
-              <div className="text-2xl font-medium">{resumo.emAndamento}</div>
+              <div className="text-2xl font-medium">{stats.emAndamento}</div>
             </div>
-            <div className="p-4 border rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
+            <div className="p-4 border rounded-lg bg-green-50 hover:bg-green-100 transition-colors flex-1 min-w-[200px]">
               <h3 className="text-sm text-gray-500 mb-1">CONCLUÍDAS</h3>
-              <div className="text-2xl font-medium">{resumo.concluidas}</div>
-            </div>
-            <div className="p-4 border rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors">
-              <h3 className="text-sm text-gray-500 mb-1">FATURADAS</h3>
-              <div className="text-2xl font-medium">{resumo.faturadas}</div>
+              <div className="text-2xl font-medium">{stats.concluidas}</div>
             </div>
           </div>
         </div>
@@ -167,54 +161,44 @@ export default function OrdensServico() {
             <h3 className="text-sm font-medium mb-3">Filtrar por Status</h3>
             <div className="flex flex-wrap gap-2">
               <button
-                className={`px-3 py-1 rounded-full text-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  selectedStatus.length === 0
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}
+                onClick={() => setSelectedStatus([])}
+              >
+                Todas
+              </button>
+              <button
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
                   selectedStatus.includes("novo")
                     ? "bg-yellow-100 text-yellow-800"
-                    : "bg-gray-100 text-gray-700"
+                    : "bg-gray-100 text-gray-800"
                 }`}
                 onClick={() => handleStatusFilterChange("novo")}
               >
                 Em Aberto
               </button>
               <button
-                className={`px-3 py-1 rounded-full text-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
                   selectedStatus.includes("em_andamento")
                     ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-700"
+                    : "bg-gray-100 text-gray-800"
                 }`}
                 onClick={() => handleStatusFilterChange("em_andamento")}
               >
                 Em Andamento
               </button>
               <button
-                className={`px-3 py-1 rounded-full text-xs ${
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
                   selectedStatus.includes("concluido")
                     ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-700"
+                    : "bg-gray-100 text-gray-800"
                 }`}
                 onClick={() => handleStatusFilterChange("concluido")}
               >
-                Concluídas
-              </button>
-              <button
-                className={`px-3 py-1 rounded-full text-xs ${
-                  selectedStatus.includes("faturado")
-                    ? "bg-purple-100 text-purple-800"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-                onClick={() => handleStatusFilterChange("faturado")}
-              >
-                Faturadas
-              </button>
-              <button
-                className={`px-3 py-1 rounded-full text-xs ${
-                  selectedStatus.includes("cancelado")
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-                onClick={() => handleStatusFilterChange("cancelado")}
-              >
-                Canceladas
+                Concluído
               </button>
             </div>
 
@@ -254,20 +238,31 @@ export default function OrdensServico() {
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 text-left text-sm text-gray-500">
-                <th className="py-4 px-6 font-medium">Nº OS</th>
-                <th className="py-4 px-6 font-medium">Cliente</th>
-                <th className="py-4 px-6 font-medium">Responsável</th>
-                <th className="py-4 px-6 font-medium">Status</th>
-                <th className="py-4 px-6 font-medium">Agendamento</th>
-                <th className="py-4 px-6 font-medium">Valor</th>
-                <th className="py-4 px-6 font-medium"></th>
+              <tr className="bg-gray-50 text-sm text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                  Nº OS
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
+                  Responsável
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">
+                  Cliente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                  Agendamento
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-4 px-6">
+                  <td colSpan={6} className="py-4 px-6">
                     <div className="text-center py-8">
                       <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full mb-2"></div>
                       <p className="text-gray-500">
@@ -278,7 +273,7 @@ export default function OrdensServico() {
                 </tr>
               ) : data?.data?.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-4 px-6">
+                  <td colSpan={6} className="py-4 px-6">
                     <div className="text-center text-gray-500 py-8">
                       Nenhuma ordem de serviço encontrada
                     </div>
@@ -287,7 +282,7 @@ export default function OrdensServico() {
               ) : (
                 data?.data?.map((os: OS) => (
                   <tr key={os.id} className="text-sm hover:bg-gray-50">
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 whitespace-nowrap">
                       <Link
                         href={`/dashboard/ordens-servico/${os.id}`}
                         className="text-blue-600 hover:text-blue-800 font-medium"
@@ -295,18 +290,15 @@ export default function OrdensServico() {
                         {os.numero}
                       </Link>
                     </td>
-                    <td className="py-4 px-6">{os.cliente.nome}</td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 truncate">
                       {os.responsavel?.nome || "Não atribuído"}
                     </td>
+                    <td className="py-4 px-6 truncate">{os.cliente.nome}</td>
+                    <td className="py-4 px-6 whitespace-nowrap">{os.agendamento}</td>
                     <td className="py-4 px-6">
                       <StatusOS status={os.status} />
                     </td>
-                    <td className="py-4 px-6">{os.agendamento}</td>
-                    <td className="py-4 px-6">
-                      {formatarMoeda(os.valorTotal)}
-                    </td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 text-center">
                       <Link
                         href={`/dashboard/ordens-servico/${os.id}`}
                         className="text-sm text-blue-600 hover:text-blue-800 underline"

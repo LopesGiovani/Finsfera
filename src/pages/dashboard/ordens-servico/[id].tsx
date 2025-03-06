@@ -13,17 +13,15 @@ import { TimelineOS } from "@/components/ordens-servico/TimelineOS";
 import { ComentariosOS } from "@/components/ordens-servico/ComentariosOS";
 import { StatusOS } from "@/components/ordens-servico/StatusOS";
 import { RegistrarTempoModal } from "@/components/ordens-servico/RegistrarTempoModal";
-import { GerarFaturaModal } from "@/components/ordens-servico/GerarFaturaModal";
 import { useRouter } from "next/router";
 import {
   useOrdemServico,
   useMudarStatusOS,
   useRegistrarTempo,
-  useGerarFatura,
   useEventosOS,
 } from "@/hooks/useOrdensServico";
 import { OrdensServicoService, OS } from "@/services/ordens-servico";
-import { formatarMoeda, formatarData } from "@/utils/formatters";
+import { formatarData } from "@/utils/formatters";
 import { toast } from "react-hot-toast";
 import { Tab } from "@headlessui/react";
 import { Button } from "@/components/ui/button";
@@ -51,10 +49,6 @@ const DetalhesTab = ({ os }: TabProps) => (
       <div>
         <span className="font-medium">Agendamento:</span>
         <span className="ml-2">{os?.agendamento ? formatarData(os.agendamento) : "Não definido"}</span>
-      </div>
-      <div>
-        <span className="font-medium">Valor:</span>
-        <span className="ml-2">{os?.valorTotal !== undefined ? formatarMoeda(os.valorTotal) : "Não definido"}</span>
       </div>
     </div>
   </div>
@@ -108,7 +102,6 @@ export default function VisualizarOS() {
   } = useOrdemServico(osId ? Number(osId) : 0);
   const { mutate: mudarStatus } = useMudarStatusOS();
   const { mutate: registrarTempo } = useRegistrarTempo();
-  const { mutate: gerarFatura } = useGerarFatura();
   const { data: eventos, isLoading: isLoadingEventos } = useEventosOS(
     osId ? Number(osId) : 0
   );
@@ -144,7 +137,6 @@ export default function VisualizarOS() {
     "detalhes" | "timeline" | "comentarios" | "edicao"
   >("detalhes");
   const [isRegistrarTempoModalOpen, setIsRegistrarTempoModalOpen] = useState(false);
-  const [isGerarFaturaModalOpen, setIsGerarFaturaModalOpen] = useState(false);
 
   // Estado para o link externo
   const [linkExterno, setLinkExterno] = useState("");
@@ -154,7 +146,6 @@ export default function VisualizarOS() {
   const [editForm, setEditForm] = useState({
     titulo: "",
     descricao: "",
-    valorTotal: 0,
     agendamento: "",
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -168,32 +159,44 @@ export default function VisualizarOS() {
     setIsRegistrarTempoModalOpen(false);
   };
 
-  const handleGerarFatura = (dados: {
-    vencimento: string;
-    condicaoPagamento: string;
-    observacoes: string;
-  }) => {
-    gerarFatura({ id: osId ? Number(osId) : 0, dados });
-    setIsGerarFaturaModalOpen(false);
-  };
-
   const handleChangeStatus = (novoStatus: string) => {
     if (!osId) return;
     
+    console.log(`Alterando status para: ${novoStatus}`);
     setIsChangingStatus(true);
+    
+    // Atualizar o estado local imediatamente para feedback visual
+    if (os) {
+      const osAtualizado = {
+        ...os,
+        status: novoStatus as any
+      };
+      setLocalOS(osAtualizado);
+    }
 
     mudarStatus(
       { id: Number(osId), status: novoStatus },
       {
         onSuccess: (data) => {
+          console.log("Status alterado com sucesso:", data);
           setIsChangingStatus(false);
 
           // Atualizar o estado local com os dados da API
           setLocalOS(data);
           refetch(); // Recarregar os dados da OS
+          
+          // Mostrar mensagem de sucesso
+          toast.success(`Status alterado para ${novoStatus}`);
         },
-        onError: () => {
+        onError: (error) => {
+          console.error("Erro ao alterar status:", error);
           setIsChangingStatus(false);
+          
+          // Reverter para o status original em caso de erro
+          if (os) {
+            setLocalOS(os);
+          }
+          
           toast.error(`Não foi possível alterar o status para ${novoStatus}`);
         },
       }
@@ -206,7 +209,6 @@ export default function VisualizarOS() {
       setEditForm({
         titulo: os.titulo,
         descricao: os.descricao,
-        valorTotal: os.valorTotal,
         agendamento: converterDataParaFormatoInput(os.agendamento),
       });
     }
@@ -240,20 +242,11 @@ export default function VisualizarOS() {
   ) => {
     const { name, value } = e.target;
     
-    // Processar o valor com base no nome do campo
-    if (name === "valorTotal") {
-      // Para o campo de valor, converter para número
-      setEditForm((prev) => ({
-        ...prev,
-        [name]: parseFloat(value) || 0,
-      }));
-    } else {
-      // Para outros campos, usar o valor como está
-      setEditForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    // Para todos os campos, usar o valor como está
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   // Função para adicionar/atualizar o link externo
@@ -305,20 +298,6 @@ export default function VisualizarOS() {
               onChange={handleInputChange}
               className="mt-1"
               rows={4}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Valor Total
-            </label>
-            <Input
-              type="number"
-              name="valorTotal"
-              value={editForm.valorTotal}
-              onChange={handleInputChange}
-              className="mt-1"
-              step="0.01"
             />
           </div>
 
@@ -385,21 +364,13 @@ export default function VisualizarOS() {
             </p>
           </div>
           <div className="ml-auto flex gap-2">
-            {os.status !== "concluido" && os.status !== "faturado" && (
+            {os.status !== "concluido" && (
               <button
                 onClick={() => handleChangeStatus("concluido")}
                 className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-colors"
                 disabled={isChangingStatus}
               >
-                Concluir OS
-              </button>
-            )}
-            {os.status === "concluido" && (
-              <button
-                onClick={() => setIsGerarFaturaModalOpen(true)}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition-colors"
-              >
-                Gerar Fatura
+                {isChangingStatus ? "Processando..." : "Concluir OS"}
               </button>
             )}
           </div>
@@ -489,12 +460,6 @@ export default function VisualizarOS() {
                     <div>
                       <h3 className="text-sm text-gray-500">Agendamento</h3>
                       <p className="font-medium">{os.agendamento}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm text-gray-500">Valor</h3>
-                      <p className="font-medium">
-                        {formatarMoeda(os.valorTotal)}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -628,24 +593,6 @@ export default function VisualizarOS() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Valor Total
-                      </label>
-                      <input
-                        type="number"
-                        value={editForm.valorTotal}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            valorTotal: Number(e.target.value),
-                          })
-                        }
-                        disabled={!isEditing}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Agendamento
                       </label>
                       <input
@@ -665,22 +612,11 @@ export default function VisualizarOS() {
         </div>
       </div>
 
-      {isRegistrarTempoModalOpen && (
-        <RegistrarTempoModal
-          isOpen={isRegistrarTempoModalOpen}
-          onClose={() => setIsRegistrarTempoModalOpen(false)}
-          onRegistrar={handleRegistrarTempo}
-        />
-      )}
-
-      {isGerarFaturaModalOpen && (
-        <GerarFaturaModal
-          isOpen={isGerarFaturaModalOpen}
-          onClose={() => setIsGerarFaturaModalOpen(false)}
-          onGerar={handleGerarFatura}
-          totalOS={os.valorTotal}
-        />
-      )}
+      <RegistrarTempoModal
+        isOpen={isRegistrarTempoModalOpen}
+        onClose={() => setIsRegistrarTempoModalOpen(false)}
+        onRegistrar={handleRegistrarTempo}
+      />
     </DashboardLayout>
   );
 }

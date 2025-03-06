@@ -21,7 +21,6 @@ interface ServiceOrderAttributes {
   assignedByUserId: number; // ID de quem criou a OS
   scheduledDate: Date; // Data programada
   customerId?: number; // ID do cliente relacionado à OS
-  value?: number; // Valor da ordem de serviço
   closingLink?: string;
   rejectionReason?: string;
   leaveOpenReason?: string;
@@ -44,7 +43,6 @@ interface ServiceOrderCreationAttributes
     | "leaveOpenReason"
     | "transferHistory"
     | "customerId"
-    | "value"
   > {}
 
 // Classe do modelo de Ordem de Serviço
@@ -62,7 +60,6 @@ class ServiceOrder
   public assignedByUserId!: number;
   public scheduledDate!: Date;
   public customerId?: number;
-  public value?: number;
   public closingLink?: string;
   public rejectionReason?: string;
   public leaveOpenReason?: string;
@@ -142,10 +139,6 @@ ServiceOrder.init(
         key: "id",
       },
       onDelete: "SET NULL",
-    },
-    value: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
     },
     closingLink: {
       type: DataTypes.STRING,
