@@ -98,10 +98,12 @@ export interface Notificacao {
 }
 
 function mapApiResponseToOS(apiResponse: ServiceOrderAPI[]): OS[] {
-  return apiResponse.map(order => {
+  console.log("Resposta da API (antes do mapeamento):", JSON.stringify(apiResponse, null, 2));
+  
+  const result = apiResponse.map(order => {
     if (!order) return null;
 
-    return {
+    const mappedOrder = {
       id: order.id,
       numero: `OS-${order.id.toString().padStart(4, '0')}`,
       titulo: order.title,
@@ -131,7 +133,15 @@ function mapApiResponseToOS(apiResponse: ServiceOrderAPI[]): OS[] {
       updatedAt: order.updatedAt || '',
       closingLink: order.closingLink || '',
     };
+    
+    console.log(`OS ID ${order.id} com status "${order.status}" mapeada para status "${mappedOrder.status}"`);
+    
+    return mappedOrder;
   }).filter(Boolean) as OS[];
+  
+  console.log("Dados após mapeamento:", JSON.stringify(result, null, 2));
+  
+  return result;
 }
 
 function mapStatus(
@@ -142,6 +152,12 @@ function mapStatus(
   | "pausado"
   | "concluido"
   | "cancelado" {
+  // Log para debug
+  console.log(`Mapeando status da API: "${apiStatus}"`);
+  
+  // Normalizar o status (remover espaços, converter para minúsculas)
+  const normalizedStatus = apiStatus?.toLowerCase()?.trim() || "";
+  
   const statusMap: Record<string, any> = {
     pendente: "novo",
     em_andamento: "em_andamento",
@@ -150,11 +166,16 @@ function mapStatus(
   };
   
   // Se o status já estiver no formato do frontend, retorná-lo diretamente
-  if (["novo", "em_andamento", "pausado", "concluido", "cancelado"].includes(apiStatus)) {
-    return apiStatus as any;
+  if (["novo", "em_andamento", "pausado", "concluido", "cancelado"].includes(normalizedStatus)) {
+    console.log(`  - Status já está no formato do frontend: "${normalizedStatus}"`);
+    return normalizedStatus as any;
   }
   
-  return statusMap[apiStatus] || "novo";
+  // Adiciona log para debug
+  const mappedStatus = statusMap[normalizedStatus] || "novo";
+  console.log(`  - Status mapeado: "${normalizedStatus}" -> "${mappedStatus}"`);
+  
+  return mappedStatus;
 }
 
 function mapStatusToApi(frontendStatus: string): string {
@@ -176,6 +197,7 @@ export const OrdensServicoService = {
   async listar() {
     try {
       const response = await api.get("/service-orders");
+      console.log("Resposta da API ordens de serviço (listar):", response.data);
       return mapApiResponseToOS(response.data);
     } catch (error) {
       console.error("Erro ao buscar ordens de serviço:", error);
@@ -488,7 +510,11 @@ export const OrdensServicoService = {
 
   async listarEventos(osId: number) {
     try {
-      const response = await api.get(`/service-orders/${osId}/events`);
+      // Usar o novo endpoint simplificado sem dependência de estrutura de pasta com colchetes
+      const response = await api.get('/timeline-events', {
+        params: { orderId: osId }
+      });
+      console.log("Resposta da API de eventos:", response.data);
       return response.data;
     } catch (error) {
       console.error(`Erro ao listar eventos da OS ${osId}:`, error);

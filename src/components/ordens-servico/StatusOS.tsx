@@ -17,6 +17,9 @@ const statusApiToFrontend = {
   reprovada: "cancelado"
 };
 
+// Adicionando um console.log para debug
+console.log("StatusOS inicializado com mapeamento:", statusApiToFrontend);
+
 // Configuração de exibição dos status do frontend
 const statusConfig = {
   novo: { cor: "bg-yellow-100 text-yellow-800", texto: "Em Aberto" },

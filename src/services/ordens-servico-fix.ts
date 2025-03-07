@@ -10,13 +10,30 @@ function mapStatus(
   | "pausado"
   | "concluido"
   | "cancelado" {
+  // Log para debug
+  console.log(`[fix] Mapeando status da API: "${apiStatus}"`);
+  
+  // Normalizar o status (remover espaços, converter para minúsculas)
+  const normalizedStatus = apiStatus?.toLowerCase()?.trim() || "";
+  
   const statusMap: Record<string, any> = {
     pendente: "novo",
     em_andamento: "em_andamento",
     concluida: "concluido",
     reprovada: "cancelado"
   };
-  return statusMap[apiStatus] || "novo";
+  
+  // Se o status já estiver no formato do frontend, retorná-lo diretamente
+  if (["novo", "em_andamento", "pausado", "concluido", "cancelado"].includes(normalizedStatus)) {
+    console.log(`[fix]  - Status já está no formato do frontend: "${normalizedStatus}"`);
+    return normalizedStatus as any;
+  }
+  
+  // Adiciona log para debug
+  const mappedStatus = statusMap[normalizedStatus] || "novo";
+  console.log(`[fix]  - Status mapeado: "${normalizedStatus}" -> "${mappedStatus}"`);
+  
+  return mappedStatus;
 }
 
 // Método corrigido para obter detalhes de uma ordem de serviço

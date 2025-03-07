@@ -31,8 +31,9 @@ export default async function handler(
       return res.status(405).json({ message: "Método não permitido" });
     }
 
-    const { id } = req.query;
-    const serviceOrderId = parseInt(id as string);
+    // Pegar o ID da OS da query string
+    const { orderId } = req.query;
+    const serviceOrderId = parseInt(orderId as string);
 
     if (isNaN(serviceOrderId)) {
       return res.status(400).json({ message: "ID de OS inválido" });
@@ -47,6 +48,7 @@ export default async function handler(
     // Extrair dados necessários da OS de forma segura
     const osData = os.get ? os.get({ plain: true }) : os;
     const status = osData.status || 'pendente';
+    const createdAt = new Date(osData.createdAt || Date.now());
 
     // Dados de exemplo para simulação
     const eventos: MockEvent[] = [
@@ -54,7 +56,7 @@ export default async function handler(
         id: 1,
         tipo: "criacao",
         descricao: "criou a ordem de serviço",
-        data: new Date().toISOString(),
+        data: createdAt.toISOString(),
         usuario: {
           id: 1,
           nome: "Administrador",
@@ -64,7 +66,7 @@ export default async function handler(
         id: 2,
         tipo: "atribuicao",
         descricao: "atribuiu a ordem de serviço para",
-        data: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        data: new Date(createdAt.getTime() + 60 * 60 * 1000).toISOString(),
         usuario: {
           id: 1,
           nome: "Administrador",
@@ -84,7 +86,7 @@ export default async function handler(
         id: 3,
         tipo: "status",
         descricao: "alterou o status para",
-        data: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        data: new Date(createdAt.getTime() + 2 * 60 * 60 * 1000).toISOString(),
         usuario: {
           id: 3,
           nome: "Técnico",
@@ -100,7 +102,7 @@ export default async function handler(
         id: 4,
         tipo: "status",
         descricao: "alterou o status para",
-        data: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        data: new Date(createdAt.getTime() + 4 * 60 * 60 * 1000).toISOString(),
         usuario: {
           id: 3,
           nome: "Técnico",
@@ -116,7 +118,7 @@ export default async function handler(
       id: eventos.length + 1,
       tipo: "comentario",
       descricao: "adicionou um comentário",
-      data: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+      data: new Date(createdAt.getTime() + 3 * 60 * 60 * 1000).toISOString(),
       usuario: {
         id: 3,
         nome: "Técnico",
@@ -130,7 +132,7 @@ export default async function handler(
       id: eventos.length + 1,
       tipo: "tempo",
       descricao: "registrou tempo de trabalho",
-      data: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      data: new Date(createdAt.getTime() + 5 * 60 * 60 * 1000).toISOString(),
       usuario: {
         id: 3,
         nome: "Técnico",
@@ -148,4 +150,4 @@ export default async function handler(
     console.error("Erro ao processar eventos da OS:", error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
-}
+} 

@@ -36,11 +36,23 @@ export default function OrdensServico() {
   }, [searchQuery]);
 
   const handleStatusFilterChange = (status: string) => {
-    const newSelectedStatus = selectedStatus.includes(status)
-      ? selectedStatus.filter((s) => s !== status)
-      : [...selectedStatus, status];
+    console.log(`Alterando filtro para status: "${status}"`);
+    
+    let newSelectedStatus = [...selectedStatus];
+
+    if (newSelectedStatus.includes(status)) {
+      // Se o status já estiver selecionado, remover
+      newSelectedStatus = newSelectedStatus.filter((s) => s !== status);
+    } else {
+      // Se não estiver selecionado, adicionar
+      newSelectedStatus.push(status);
+    }
 
     setSelectedStatus(newSelectedStatus);
+    
+    console.log(`Novos status selecionados: ${JSON.stringify(newSelectedStatus)}`);
+
+    // Atualizar filtros para a API
     atualizarFiltros({
       status: newSelectedStatus.length > 0 ? newSelectedStatus : undefined,
     });
@@ -62,12 +74,24 @@ export default function OrdensServico() {
   // Estatísticas
   const stats = {
     total: data?.data?.length || 0,
-    novas: data?.data?.filter((os: OS) => os.status === "novo").length || 0,
+    emAberto: data?.data?.filter((os: OS) => os.status === "novo").length || 0,
     emAndamento:
       data?.data?.filter((os: OS) => os.status === "em_andamento").length || 0,
     concluidas:
       data?.data?.filter((os: OS) => os.status === "concluido").length || 0,
   };
+
+  // Log para debug
+  console.log("Dados recebidos no dashboard:", data?.data);
+  console.log("Estatísticas calculadas:", stats);
+  
+  // Log dos status de cada OS
+  if (data?.data) {
+    console.log("Status de cada OS:");
+    data.data.forEach((os: OS) => {
+      console.log(`OS ${os.id} (${os.numero}): status = "${os.status}"`);
+    });
+  }
 
   return (
     <DashboardLayout>
@@ -98,8 +122,8 @@ export default function OrdensServico() {
               <div className="text-2xl font-medium">{stats.total}</div>
             </div>
             <div className="p-4 border rounded-lg bg-yellow-50 hover:bg-yellow-100 transition-colors flex-1 min-w-[200px]">
-              <h3 className="text-sm text-gray-500 mb-1">NOVAS</h3>
-              <div className="text-2xl font-medium">{stats.novas}</div>
+              <h3 className="text-sm text-gray-500 mb-1">EM ABERTO</h3>
+              <div className="text-2xl font-medium">{stats.emAberto}</div>
             </div>
             <div className="p-4 border rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors flex-1 min-w-[200px]">
               <h3 className="text-sm text-gray-500 mb-1">EM ANDAMENTO</h3>

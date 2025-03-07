@@ -1,120 +1,82 @@
-# Finsfera - Sistema Contábil com IA
+# Finsfera - Sistema de Gestao Empresarial com IA
 
-O Finsfera é um sistema moderno de contabilidade automatizada que utiliza inteligência artificial para simplificar processos financeiros. Desenvolvido com Next.js e integrado com PostgreSQL no Neon, oferece uma solução completa para gestão contábil.
+Finsfera e uma plataforma completa de gestao empresarial que usa IA para otimizar processos de negocios.
 
-## Pré-requisitos
+## Visao Geral
 
-- Node.js (versão 14 ou superior)
-- NPM ou Yarn
-- Conta no Neon.tech para o banco de dados PostgreSQL
+O sistema gerencia:
 
-## Configuração
+- Ordens de Servico (Em Aberto, Em Andamento, Concluido)
+- Clientes
+- Equipe/Time
+- Dashboards e Relatorios
+- Faturamento
 
-1. **Clone o repositório:**
+## Tecnologias
 
-   ```bash
-   git clone https://github.com/seu-usuario/finsfera.git
-   cd finsfera
-   ```
+- **Frontend**: Next.js, React, Tailwind CSS, React Query
+- **Backend**: API Routes do Next.js, PostgreSQL no Neon
+- **Deploy**: Vercel Serverless Functions
+- **Autenticacao**: JWT
 
-2. **Instale as dependências:**
+## Principais Funcionalidades
 
-   ```bash
-   npm install
-   ```
+### Modulo de Ordens de Servico
 
-3. **Configure as variáveis de ambiente:**
+- Criacao e acompanhamento de atendimentos
+- Atribuicao de responsaveis
+- Comentarios e anexos
+- Controle de tempo
+- Relatorios de produtividade
 
-   - Copie o arquivo `.env.example` para `.env.local`
-   - Preencha as variáveis com suas credenciais de banco de dados e configurações
+### Modulo de Clientes
 
-4. **Inicialize o banco de dados:**
+- Cadastro completo 
+- Historico de atendimentos
+- Segmentacao
 
-   ```bash
-   npm run initdb
-   ```
+### Modulo de Equipe
 
-5. **Gere uma chave JWT segura:**
+- Niveis de acesso: Proprietario, Administrador, Usuario
+- Gerenciamento de permissoes
+- Status de atividade
 
-   ```bash
-   npm run generate-secret
-   ```
+## Como Usar
 
-   Copie a chave gerada para sua variável `JWT_SECRET` no arquivo `.env.local`
+1. Clone o repositorio
+2. Instale as dependencias: `npm install`
+3. Configure o `.env.local` com dados de conexao
+4. Inicialize o banco: `npm run initdb`
+5. Gere chave JWT: `npm run generate-secret`
+6. Inicie o servidor: `npm run dev`
 
-6. **Inicie o servidor de desenvolvimento:**
-   ```bash
-   npm run dev
-   ```
-
-## Gerenciamento de Membros da Equipe
-
-O Finsfera permite que o proprietário da empresa gerencie os membros da equipe, controlando quem tem acesso ao sistema e com quais permissões.
-
-### Tipos de Usuários
-
-- **Proprietário (owner)**: Tem acesso completo ao sistema, incluindo o gerenciamento de outros usuários.
-- **Administrador (admin)**: Pode gerenciar a maioria das funções do sistema, mas não pode gerenciar outros usuários.
-- **Usuário (user)**: Tem acesso limitado às funcionalidades básicas do sistema.
-
-### Gerenciando Membros
-
-1. Faça login como proprietário
-2. Acesse a seção "Membros do Time" no menu lateral
-3. A partir daqui, você pode:
-   - Visualizar todos os membros existentes
-   - Adicionar novos membros, definindo nome, email, senha e função
-   - Editar informações de membros existentes
-   - Alterar o status de um membro (ativo, inativo, pendente)
-   - Excluir membros da equipe
-
-### Status dos Membros
-
-- **Ativo**: O usuário tem acesso normal ao sistema
-- **Inativo**: O usuário não pode fazer login no sistema
-- **Pendente**: O usuário foi criado, mas ainda precisa definir sua senha ou completar o cadastro
-
-## Estrutura do Projeto
-
-Principais arquivos e diretórios:
+## Estrutura de Diretorios
 
 ```
 /src
-  /components        # Componentes React reutilizáveis
-  /database          # Configuração do banco de dados
-  /hooks             # Hooks personalizados do React
-  /models            # Modelos de dados (Sequelize)
-  /pages             # Páginas da aplicação e endpoints da API
-    /api             # Endpoints da API REST
-    /dashboard       # Páginas protegidas do dashboard
-      /time          # Gerenciamento de membros da equipe
-  /scripts           # Scripts para inicialização e outras tarefas
+  /components      # Componentes React
+  /contexts        # Contextos React
+  /hooks           # Custom hooks
+  /lib             # Bibliotecas
+  /middleware      # Autenticacao
+  /pages           # Paginas e API
+  /scripts         # Scripts de setup
+  /services        # Servicos API
+  /utils           # Utilitarios
 ```
 
-## Variáveis de Ambiente
+## API
 
-| Variável            | Descrição                             | Exemplo                               |
-| ------------------- | ------------------------------------- | ------------------------------------- |
-| DATABASE_URL        | URL de conexão com o banco PostgreSQL | postgres://user:pass@host:port/dbname |
-| JWT_SECRET          | Chave secreta para geração de tokens  | chave-secreta-gerada                  |
-| NODE_ENV            | Ambiente de execução                  | development                           |
-| NEXT_PUBLIC_API_URL | URL base da API                       | http://localhost:3000                 |
-| NEXT_PUBLIC_APP_URL | URL base da aplicação                 | http://localhost:3000                 |
+Endpoints principais:
 
-## Implantação
+- `/api/auth`: Autenticacao
+- `/api/customers`: Gerenciamento de clientes
+- `/api/service-orders`: Gerenciamento de OS
+- `/api/team`: Gerenciamento de equipe
 
-Para implantar a aplicação no Vercel:
+## Acesso Inicial
 
-1. Conecte seu repositório ao Vercel
-2. Configure as variáveis de ambiente
-3. Defina comandos de build e inicialização
-4. Conecte ao banco de dados Neon
+- Email: admin@finsfera.com
+- Senha: admin123
 
-## Usuário Inicial
-
-Após a inicialização do banco de dados, um usuário proprietário é criado com as seguintes credenciais:
-
-- **Email**: admin@finsfera.com
-- **Senha**: admin123
-
-É altamente recomendado alterar essas credenciais após o primeiro login.
+Altere essas credenciais apos o primeiro login.

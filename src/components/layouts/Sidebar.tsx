@@ -29,16 +29,16 @@ const navigation = [
     children: [
       { name: "Lista de Clientes", href: "/dashboard/clientes" },
       { name: "Novo Cliente", href: "/dashboard/clientes/novo" },
-      { name: "Relatórios", href: "/dashboard/clientes/relatorios" },
     ],
   },
-  { name: "Financeiro", href: "/dashboard/financeiro", icon: BanknotesIcon },
-  { name: "Documentos", href: "/dashboard/documentos", icon: DocumentTextIcon },
-  {
-    name: "Configurações",
-    href: "/dashboard/configuracoes",
-    icon: Cog6ToothIcon,
-  },
+  // Comentando páginas que ainda não foram implementadas
+  // { name: "Financeiro", href: "/dashboard/financeiro", icon: BanknotesIcon },
+  // { name: "Documentos", href: "/dashboard/documentos", icon: DocumentTextIcon },
+  // {
+  //   name: "Configurações",
+  //   href: "/dashboard/configuracoes",
+  //   icon: Cog6ToothIcon,
+  // },
 ];
 
 export function Sidebar() {
