@@ -2,12 +2,15 @@
  * Script para atualizar o banco de dados sem perder os dados existentes
  * Este script atualiza a estrutura das tabelas conforme necessário
  */
+require("dotenv").config();
 const { Sequelize, DataTypes } = require("sequelize");
 
-// URL de conexão com o banco de dados
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgres://neondb_owner:npg_UXBQzj8cEv6h@ep-orange-paper-a4dqufsa.us-east-1.aws.neon.tech/production?sslmode=require";
+// Construir a URL de conexão a partir das variáveis individuais
+const PGHOST = process.env.PGHOST;
+const PGUSER = process.env.PGUSER;
+const PGPASSWORD = process.env.PGPASSWORD;
+const PGDATABASE = process.env.PGDATABASE;
+const DATABASE_URL = `postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require`;
 
 // Inicializa o Sequelize
 const sequelize = new Sequelize(DATABASE_URL, {
@@ -225,7 +228,7 @@ async function updateDB() {
       "service_orders",
       "value",
       "DECIMAL(10,2) DEFAULT NULL"
-    );  
+    );
 
     // Cria ou atualiza a tabela customers
     const customersTableExists = await tableExists("customers");
@@ -268,7 +271,7 @@ async function updateDB() {
       "SELECT COUNT(*) FROM service_orders;",
       { type: Sequelize.QueryTypes.SELECT }
     );
-    
+
     // Limpar ordens de serviço existentes e criar novas
     if (parseInt(osCount[0].count) > 0) {
       console.log("Limpando ordens de serviço existentes...");
@@ -284,28 +287,28 @@ async function updateDB() {
 
     // Obter clientes para vincular às ordens de serviço
     const customers = await sequelize.query(
-      "SELECT id, \"organizationId\" FROM customers LIMIT 5;",
+      'SELECT id, "organizationId" FROM customers LIMIT 5;',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
     if (users.length > 0 && customers.length > 0) {
       console.log("Criando novas ordens de serviço...");
-      
+
       // Criar ordens de serviço para cada cliente
       for (let i = 0; i < customers.length; i++) {
         const customer = customers[i];
         const user = users[i % users.length];
         const manager = users[(i + 1) % users.length];
-        
+
         // Criar 2 ordens de serviço por cliente com valores variados
         for (let j = 0; j < 2; j++) {
           const today = new Date();
           const scheduledDate = new Date();
           scheduledDate.setDate(today.getDate() + (j + 1) * 15); // Datas espaçadas a cada 15 dias
-          
+
           const priority = j % 2 === 0 ? "media" : "urgente";
           const value = (j + 1) * 150.75; // Valores variados
-          
+
           await sequelize.query(`
             INSERT INTO service_orders (
               "organizationId", title, description, status, priority, 
@@ -313,8 +316,12 @@ async function updateDB() {
               "customerId", value, "createdAt", "updatedAt"
             ) VALUES (
               ${customer.organizationId},
-              'Manutenção ${j === 0 ? 'Preventiva' : 'Corretiva'} #${i * 2 + j + 1}',
-              'Descrição detalhada do serviço a ser realizado. Cliente: ${i + 1}, Ordem: ${j + 1}',
+              'Manutenção ${j === 0 ? "Preventiva" : "Corretiva"} #${
+            i * 2 + j + 1
+          }',
+              'Descrição detalhada do serviço a ser realizado. Cliente: ${
+                i + 1
+              }, Ordem: ${j + 1}',
               'pendente',
               '${priority}',
               ${user.id},
@@ -328,10 +335,12 @@ async function updateDB() {
           `);
         }
       }
-      
+
       console.log("Ordens de serviço criadas com sucesso!");
     } else {
-      console.log("Não foi possível criar ordens de serviço: não há usuários ou clientes suficientes.");
+      console.log(
+        "Não foi possível criar ordens de serviço: não há usuários ou clientes suficientes."
+      );
     }
 
     console.log("Banco de dados atualizado com sucesso!");

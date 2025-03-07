@@ -2,13 +2,16 @@
  * Script para gerar usuários de teste
  * Este script cria usuários de teste com diferentes funções em organizações específicas
  */
+require("dotenv").config();
 const bcrypt = require("bcrypt");
 const { Sequelize, DataTypes } = require("sequelize");
 
-// URL de conexão com o banco de dados
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgresql://neondb_owner:npg_UXBQzj8cEv6h@ep-orange-paper-a4dqufsa.us-east-1.aws.neon.tech/staging?sslmode=require";
+// Construir a URL de conexão a partir das variáveis individuais
+const PGHOST = process.env.PGHOST;
+const PGUSER = process.env.PGUSER;
+const PGPASSWORD = process.env.PGPASSWORD;
+const PGDATABASE = process.env.PGDATABASE;
+const DATABASE_URL = `postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require`;
 
 // Inicializa o Sequelize
 const sequelize = new Sequelize(DATABASE_URL, {

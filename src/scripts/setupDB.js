@@ -6,13 +6,16 @@
  * 3. Cria usuários, organizações e dados de exemplo
  * 4. Cria ordens de serviço com valores e relacionamentos corretos
  */
+require("dotenv").config();
 const { Sequelize, DataTypes } = require("sequelize");
 const bcrypt = require("bcryptjs");
 
-// URL de conexão com o banco de dados
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgres://neondb_owner:npg_UXBQzj8cEv6h@ep-orange-paper-a4dqufsa.us-east-1.aws.neon.tech/production?sslmode=require";
+// Construir a URL de conexão a partir das variáveis individuais
+const PGHOST = process.env.PGHOST;
+const PGUSER = process.env.PGUSER;
+const PGPASSWORD = process.env.PGPASSWORD;
+const PGDATABASE = process.env.PGDATABASE;
+const DATABASE_URL = `postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require`;
 
 // Inicializa o Sequelize
 const sequelize = new Sequelize(DATABASE_URL, {
@@ -82,18 +85,13 @@ async function createEnumIfNotExists(enumName, values) {
 async function dropTablesIfExist() {
   try {
     console.log("Removendo tabelas existentes...");
-    
+
     // Lista de tabelas para remover (na ordem correta considerando chaves estrangeiras)
-    const tables = [
-      "service_orders",
-      "customers",
-      "users",
-      "organizations"
-    ];
+    const tables = ["service_orders", "customers", "users", "organizations"];
 
     // Desativar verificação de chaves estrangeiras temporariamente
     await sequelize.query("SET session_replication_role = 'replica';");
-    
+
     for (const table of tables) {
       try {
         await sequelize.query(`DROP TABLE IF EXISTS "${table}" CASCADE;`);
@@ -102,10 +100,10 @@ async function dropTablesIfExist() {
         console.error(`Erro ao remover tabela ${table}:`, err);
       }
     }
-    
+
     // Reativar verificação de chaves estrangeiras
     await sequelize.query("SET session_replication_role = 'origin';");
-    
+
     console.log("Tabelas removidas com sucesso!");
   } catch (error) {
     console.error("Erro ao remover tabelas:", error);
@@ -115,7 +113,7 @@ async function dropTablesIfExist() {
 async function createENUMs() {
   try {
     console.log("Criando tipos ENUM...");
-    
+
     // Criar ENUM para papéis de usuário
     await createEnumIfNotExists("enum_users_role", [
       "system_admin",
@@ -147,7 +145,7 @@ async function createENUMs() {
       "ouro",
       "vip",
     ]);
-    
+
     console.log("Tipos ENUM criados com sucesso!");
   } catch (error) {
     console.error("Erro ao criar tipos ENUM:", error);
@@ -157,7 +155,7 @@ async function createENUMs() {
 async function createTables() {
   try {
     console.log("Criando tabelas...");
-    
+
     // Criar tabela de organizações
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS organizations (
@@ -176,7 +174,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela organizations criada.");
-    
+
     // Criar tabela de usuários
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -193,7 +191,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela users criada.");
-    
+
     // Criar tabela de clientes
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS customers (
@@ -221,7 +219,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela customers criada.");
-    
+
     // Criar tabela de ordens de serviço
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS service_orders (
@@ -246,7 +244,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela service_orders criada.");
-    
+
     // Criar tabela de anexos de ordem de serviço
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS service_order_attachments (
@@ -263,7 +261,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela service_order_attachments criada.");
-    
+
     console.log("Todas as tabelas criadas com sucesso!");
   } catch (error) {
     console.error("Erro ao criar tabelas:", error);
@@ -273,7 +271,7 @@ async function createTables() {
 async function createSampleData() {
   try {
     console.log("Criando dados de exemplo...");
-    
+
     // Criar administrador do sistema
     const hashedAdminPassword = await bcrypt.hash("admin123", 10);
     await sequelize.query(`
@@ -281,20 +279,20 @@ async function createSampleData() {
       VALUES ('Admin', 'admin@finsfera.com', '${hashedAdminPassword}', 'system_admin', NULL);
     `);
     console.log("Administrador do sistema criado com sucesso!");
-    
+
     // Criar organização de exemplo
     await sequelize.query(`
       INSERT INTO organizations (name, document, email, phone, address, city, state, "zipCode")
       VALUES ('Empresa Exemplo', '12.345.678/0001-90', 'contato@exemplo.com', '(11) 3456-7890', 'Av Principal, 123', 'São Paulo', 'SP', '01310-100');
     `);
     console.log("Organização de exemplo criada com sucesso!");
-    
+
     // Obter ID da organização criada
     const [orgResult] = await sequelize.query(`
       SELECT id FROM organizations WHERE name = 'Empresa Exemplo' LIMIT 1;
     `);
     const organizationId = orgResult[0].id;
-    
+
     // Criar proprietário da organização
     const hashedOwnerPassword = await bcrypt.hash("owner123", 10);
     await sequelize.query(`
@@ -302,34 +300,34 @@ async function createSampleData() {
       VALUES ('Proprietário', 'owner@example.com', '${hashedOwnerPassword}', 'owner', ${organizationId}, true);
     `);
     console.log("Proprietário da organização criado com sucesso!");
-    
+
     // Criar outros membros da equipe
     const hashedMemberPassword = await bcrypt.hash("member123", 10);
-    
+
     // Gerente
     await sequelize.query(`
       INSERT INTO users (name, email, password, role, "organizationId", "canSeeAllOS")
       VALUES ('Gerente', 'gerente@example.com', '${hashedMemberPassword}', 'manager', ${organizationId}, true);
     `);
-    
+
     // Técnicos
     await sequelize.query(`
       INSERT INTO users (name, email, password, role, "organizationId")
       VALUES ('Técnico 1', 'tecnico1@example.com', '${hashedMemberPassword}', 'technician', ${organizationId});
     `);
-    
+
     await sequelize.query(`
       INSERT INTO users (name, email, password, role, "organizationId")
       VALUES ('Técnico 2', 'tecnico2@example.com', '${hashedMemberPassword}', 'technician', ${organizationId});
     `);
-    
+
     // Assistente
     await sequelize.query(`
       INSERT INTO users (name, email, password, role, "organizationId")
       VALUES ('Assistente', 'assistente@example.com', '${hashedMemberPassword}', 'assistant', ${organizationId});
     `);
     console.log("Membros da equipe criados com sucesso!");
-    
+
     // Criar clientes de exemplo
     const customers = [
       {
@@ -350,7 +348,7 @@ async function createSampleData() {
         contactPerson: "João Silva",
         notes: "Cliente desde 2020",
         plan: "ouro",
-        active: true
+        active: true,
       },
       {
         organizationId: 1,
@@ -370,7 +368,7 @@ async function createSampleData() {
         contactPerson: "",
         notes: "Cliente residencial",
         plan: "prata",
-        active: true
+        active: true,
       },
       {
         organizationId: 1,
@@ -390,10 +388,10 @@ async function createSampleData() {
         contactPerson: "Carlos Mendes",
         notes: "Cliente VIP",
         plan: "vip",
-        active: true
-      }
+        active: true,
+      },
     ];
-    
+
     for (const customer of customers) {
       await sequelize.query(`
         INSERT INTO customers (
@@ -411,31 +409,31 @@ async function createSampleData() {
       `);
     }
     console.log("Clientes de exemplo criados.");
-    
+
     // Obter IDs dos usuários
     const [userResult] = await sequelize.query(`
       SELECT id, role FROM users WHERE "organizationId" = ${organizationId} ORDER BY id;
     `);
-    
+
     // Obter IDs dos clientes
     const [clientResult] = await sequelize.query(`
       SELECT id FROM customers WHERE "organizationId" = ${organizationId} ORDER BY id;
     `);
-    
+
     // Criar ordens de serviço para cada cliente com valores
     console.log("Criando ordens de serviço...");
-    
-    const technicians = userResult.filter(u => u.role === 'technician');
-    const managers = userResult.filter(u => u.role === 'manager');
-    
+
+    const technicians = userResult.filter((u) => u.role === "technician");
+    const managers = userResult.filter((u) => u.role === "manager");
+
     for (let i = 0; i < clientResult.length; i++) {
       const clientId = clientResult[i].id;
       const techId = technicians[i % technicians.length].id;
       const managerId = managers[0].id;
-      
+
       // Data atual
       const now = new Date();
-      
+
       // Criar duas ordens de serviço por cliente (uma pendente e uma em andamento)
       // OS Pendente
       await sequelize.query(`
@@ -446,19 +444,23 @@ async function createSampleData() {
         ) VALUES (
           ${organizationId},
           'Manutenção Preventiva #${i + 1}',
-          'Descrição detalhada da manutenção preventiva necessária para o cliente ${i + 1}. Incluir verificação completa do sistema.',
+          'Descrição detalhada da manutenção preventiva necessária para o cliente ${
+            i + 1
+          }. Incluir verificação completa do sistema.',
           'pendente',
           'media',
           ${techId},
           ${managerId},
-          '${new Date(now.getTime() + (i + 1) * 24 * 60 * 60 * 1000).toISOString()}',
+          '${new Date(
+            now.getTime() + (i + 1) * 24 * 60 * 60 * 1000
+          ).toISOString()}',
           ${clientId},
           ${150.75 * (i + 1)},
           NOW(),
           NOW()
         );
       `);
-      
+
       // OS Em Andamento
       await sequelize.query(`
         INSERT INTO service_orders (
@@ -468,20 +470,24 @@ async function createSampleData() {
         ) VALUES (
           ${organizationId},
           'Suporte Técnico #${i + 1}',
-          'Atendimento de suporte técnico urgente para resolução de problema crítico no cliente ${i + 1}.',
+          'Atendimento de suporte técnico urgente para resolução de problema crítico no cliente ${
+            i + 1
+          }.',
           'em_andamento',
           'urgente',
           ${techId},
           ${managerId},
-          '${new Date(now.getTime() + (i + 2) * 24 * 60 * 60 * 1000).toISOString()}',
+          '${new Date(
+            now.getTime() + (i + 2) * 24 * 60 * 60 * 1000
+          ).toISOString()}',
           ${clientId},
-          ${250.50 * (i + 1)},
+          ${250.5 * (i + 1)},
           NOW(),
           NOW()
         );
       `);
     }
-    
+
     console.log("Ordens de serviço criadas com sucesso!");
     console.log("Dados de exemplo criados com sucesso!");
   } catch (error) {
@@ -497,13 +503,13 @@ async function setupDatabase() {
 
     // Resetar banco de dados
     await dropTablesIfExist();
-    
+
     // Criar tipos ENUM
     await createENUMs();
-    
+
     // Criar tabelas
     await createTables();
-    
+
     // Criar dados de exemplo
     await createSampleData();
 
@@ -517,7 +523,9 @@ async function setupDatabase() {
     console.log("  Email: owner@example.com");
     console.log("  Senha: owner123");
     console.log("\nOutros usuários:");
-    console.log("  Email: gerente@example.com, tecnico1@example.com, tecnico2@example.com, assistente@example.com");
+    console.log(
+      "  Email: gerente@example.com, tecnico1@example.com, tecnico2@example.com, assistente@example.com"
+    );
     console.log("  Senha: member123");
     console.log("=============================================");
   } catch (error) {
@@ -529,4 +537,4 @@ async function setupDatabase() {
 }
 
 // Executa a função principal
-setupDatabase(); 
+setupDatabase();

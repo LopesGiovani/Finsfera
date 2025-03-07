@@ -1,22 +1,25 @@
 /**
  * Script unificado para configuração completa do banco de dados
- * 
+ *
  * Este script combina as funcionalidades de:
  * - initDB.js: Inicialização do banco de dados
  * - updateDB.js: Atualização de ordens de serviço
  * - add-customerId-to-service-orders.js: Adição da coluna customerId
  * - add-customer-columns.js: Adição das novas colunas de clientes
  * - fix-address-constraint.js: Correção da restrição NOT NULL da coluna address
- * 
+ *
  * Executa todas as operações em sequência para garantir uma configuração completa.
  */
+require("dotenv").config();
 const { Sequelize, DataTypes, Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
 
-// URL de conexão com o banco de dados
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgres://neondb_owner:npg_UXBQzj8cEv6h@ep-orange-paper-a4dqufsa.us-east-1.aws.neon.tech/production?sslmode=require";
+// Construir a URL de conexão a partir das variáveis individuais
+const PGHOST = process.env.PGHOST;
+const PGUSER = process.env.PGUSER;
+const PGPASSWORD = process.env.PGPASSWORD;
+const PGDATABASE = process.env.PGDATABASE;
+const DATABASE_URL = `postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require`;
 
 // Inicializa o Sequelize
 const sequelize = new Sequelize(DATABASE_URL, {
@@ -93,7 +96,10 @@ async function columnExists(tableName, columnName) {
     `);
     return result[0].length > 0;
   } catch (error) {
-    console.error(`Erro ao verificar coluna ${columnName} na tabela ${tableName}:`, error);
+    console.error(
+      `Erro ao verificar coluna ${columnName} na tabela ${tableName}:`,
+      error
+    );
     return false;
   }
 }
@@ -117,23 +123,25 @@ async function tableExists(tableName) {
 async function dropTablesIfExist() {
   try {
     console.log("Tentando remover tabelas existentes...");
-    
+
     // Lista de tabelas para remover (na ordem correta considerando chaves estrangeiras)
     const tables = [
       "service_order_attachments",
       "service_orders",
       "customers",
       "users",
-      "organizations"
+      "organizations",
     ];
 
     try {
       // Desativar verificação de chaves estrangeiras temporariamente (pode falhar em alguns provedores)
       await sequelize.query("SET session_replication_role = 'replica';");
     } catch (error) {
-      console.log("Aviso: Não foi possível desativar verificação de chaves estrangeiras. Continuando...");
+      console.log(
+        "Aviso: Não foi possível desativar verificação de chaves estrangeiras. Continuando..."
+      );
     }
-    
+
     for (const table of tables) {
       try {
         await sequelize.query(`DROP TABLE IF EXISTS "${table}" CASCADE;`);
@@ -142,14 +150,16 @@ async function dropTablesIfExist() {
         console.error(`Erro ao remover tabela ${table}:`, err);
       }
     }
-    
+
     try {
       // Reativar verificação de chaves estrangeiras
       await sequelize.query("SET session_replication_role = 'origin';");
     } catch (error) {
-      console.log("Aviso: Não foi possível reativar verificação de chaves estrangeiras. Continuando...");
+      console.log(
+        "Aviso: Não foi possível reativar verificação de chaves estrangeiras. Continuando..."
+      );
     }
-    
+
     console.log("Processo de remoção de tabelas concluído.");
   } catch (error) {
     console.error("Erro ao remover tabelas:", error);
@@ -160,7 +170,7 @@ async function dropTablesIfExist() {
 async function createENUMs() {
   try {
     console.log("Criando tipos ENUM...");
-    
+
     // Criar ENUM para papéis de usuário
     await createEnumIfNotExists("enum_users_role", [
       "system_admin",
@@ -195,7 +205,7 @@ async function createENUMs() {
       "Tráfego Profissional",
       "Tráfego Avançado",
     ]);
-    
+
     console.log("Tipos ENUM criados com sucesso!");
   } catch (error) {
     console.error("Erro ao criar tipos ENUM:", error);
@@ -206,7 +216,7 @@ async function createENUMs() {
 async function createTables() {
   try {
     console.log("Criando tabelas...");
-    
+
     // Criar tabela de organizações
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS organizations (
@@ -225,7 +235,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela organizations criada.");
-    
+
     // Criar tabela de usuários
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -242,7 +252,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela users criada.");
-    
+
     // Criar tabela de clientes
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS customers (
@@ -271,7 +281,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela customers criada.");
-    
+
     // Criar tabela de ordens de serviço
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS service_orders (
@@ -295,7 +305,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela service_orders criada.");
-    
+
     // Criar tabela de anexos de ordem de serviço
     await sequelize.query(`
       CREATE TABLE IF NOT EXISTS service_order_attachments (
@@ -312,7 +322,7 @@ async function createTables() {
       );
     `);
     console.log("Tabela service_order_attachments criada.");
-    
+
     console.log("Todas as tabelas criadas com sucesso!");
   } catch (error) {
     console.error("Erro ao criar tabelas:", error);
@@ -323,7 +333,7 @@ async function createTables() {
 async function fixColumnConstraints() {
   try {
     console.log("Verificando e corrigindo restrições de colunas...");
-    
+
     // Verificar se a coluna 'address' existe e tem restrição NOT NULL
     const checkAddressColumn = await sequelize.query(`
       SELECT column_name, is_nullable 
@@ -332,51 +342,57 @@ async function fixColumnConstraints() {
     `);
 
     if (checkAddressColumn[0].length > 0) {
-      const isNullable = checkAddressColumn[0][0].is_nullable === 'YES';
-      
+      const isNullable = checkAddressColumn[0][0].is_nullable === "YES";
+
       if (!isNullable) {
-        console.log("Coluna 'address' encontrada com restrição NOT NULL. Modificando...");
-        
+        console.log(
+          "Coluna 'address' encontrada com restrição NOT NULL. Modificando..."
+        );
+
         // Modificar a restrição NOT NULL
         await sequelize.query(`
           ALTER TABLE customers 
           ALTER COLUMN address DROP NOT NULL;
         `);
-        
+
         console.log("Restrição NOT NULL removida da coluna 'address'.");
       } else {
-        console.log("Coluna 'address' já aceita valores NULL. Nenhuma alteração necessária.");
+        console.log(
+          "Coluna 'address' já aceita valores NULL. Nenhuma alteração necessária."
+        );
       }
     }
 
     // Verificar se as colunas de endereço têm restrições NOT NULL
-    const addressColumns = ['street', 'number', 'district'];
+    const addressColumns = ["street", "number", "district"];
     for (const column of addressColumns) {
-      if (await columnExists('customers', column)) {
+      if (await columnExists("customers", column)) {
         const checkColumn = await sequelize.query(`
           SELECT column_name, is_nullable 
           FROM information_schema.columns 
           WHERE table_name = 'customers' AND column_name = '${column}';
         `);
-        
+
         if (checkColumn[0].length > 0) {
-          const isNullable = checkColumn[0][0].is_nullable === 'YES';
-          
+          const isNullable = checkColumn[0][0].is_nullable === "YES";
+
           if (isNullable) {
-            console.log(`Coluna '${column}' encontrada sem restrição NOT NULL. Modificando...`);
-            
+            console.log(
+              `Coluna '${column}' encontrada sem restrição NOT NULL. Modificando...`
+            );
+
             // Adicionar a restrição NOT NULL
             await sequelize.query(`
               ALTER TABLE customers 
               ALTER COLUMN "${column}" SET NOT NULL;
             `);
-            
+
             console.log(`Restrição NOT NULL adicionada à coluna '${column}'.`);
           }
         }
       }
     }
-    
+
     console.log("Verificação e correção de restrições concluídas.");
   } catch (error) {
     console.error("Erro ao corrigir restrições de colunas:", error);
@@ -387,7 +403,7 @@ async function fixColumnConstraints() {
 async function createSampleData() {
   try {
     console.log("Criando dados de exemplo...");
-    
+
     // Criar usuário administrador do sistema
     const adminPassword = await bcrypt.hash("admin123", 10);
     try {
@@ -400,7 +416,7 @@ async function createSampleData() {
     } catch (error) {
       console.error("Erro ao criar usuário administrador:", error);
     }
-    
+
     // Criar organização de exemplo
     try {
       const orgResult = await sequelize.query(`
@@ -409,12 +425,12 @@ async function createSampleData() {
         ON CONFLICT DO NOTHING
         RETURNING id;
       `);
-      
+
       const organizationId = orgResult[0][0]?.id;
-      
+
       if (organizationId) {
         console.log(`Organização de exemplo criada com ID: ${organizationId}`);
-        
+
         // Criar proprietário da organização
         const ownerPassword = await bcrypt.hash("owner123", 10);
         await sequelize.query(`
@@ -422,7 +438,7 @@ async function createSampleData() {
           VALUES ('Proprietário', 'owner@example.com', '${ownerPassword}', 'owner', ${organizationId}, true)
           ON CONFLICT (email) DO NOTHING;
         `);
-        
+
         // Criar membros da equipe
         const memberPassword = await bcrypt.hash("member123", 10);
         await sequelize.query(`
@@ -434,9 +450,9 @@ async function createSampleData() {
             ('Assistente', 'assistente@example.com', '${memberPassword}', 'assistant', ${organizationId}, false)
           ON CONFLICT (email) DO NOTHING;
         `);
-        
+
         console.log("Usuários de exemplo criados com sucesso!");
-        
+
         // Criar clientes de exemplo
         const customers = [
           {
@@ -458,7 +474,7 @@ async function createSampleData() {
             notes: "Cliente desde 2020",
             plan: "ouro",
             active: true,
-            address: "Av. Paulista, 1000"
+            address: "Av. Paulista, 1000",
           },
           {
             organizationId,
@@ -479,7 +495,7 @@ async function createSampleData() {
             notes: "Cliente residencial",
             plan: "prata",
             active: true,
-            address: "Rua das Flores, 123"
+            address: "Rua das Flores, 123",
           },
           {
             organizationId,
@@ -500,7 +516,7 @@ async function createSampleData() {
             notes: "Cliente VIP",
             plan: "vip",
             active: true,
-            address: "Rua Tecnológica, 500"
+            address: "Rua Tecnológica, 500",
           },
           {
             organizationId,
@@ -521,7 +537,7 @@ async function createSampleData() {
             notes: "Cliente novo",
             plan: "Tráfego Essencial",
             active: true,
-            address: "Rua da Inovação, 789"
+            address: "Rua da Inovação, 789",
           },
           {
             organizationId,
@@ -542,7 +558,7 @@ async function createSampleData() {
             notes: "Cliente em expansão",
             plan: "Tráfego Profissional",
             active: true,
-            address: "Av. do Comércio, 456"
+            address: "Av. do Comércio, 456",
           },
           {
             organizationId,
@@ -563,10 +579,10 @@ async function createSampleData() {
             notes: "Cliente premium",
             plan: "Tráfego Avançado",
             active: true,
-            address: "Av. Berrini, 1500"
-          }
+            address: "Av. Berrini, 1500",
+          },
         ];
-        
+
         for (const customer of customers) {
           await sequelize.query(`
             INSERT INTO customers (
@@ -584,40 +600,41 @@ async function createSampleData() {
           `);
         }
         console.log("Clientes de exemplo criados.");
-        
+
         // Obter IDs dos usuários
         const usersResult = await sequelize.query(`
           SELECT id, name, role FROM users WHERE "organizationId" = ${organizationId};
         `);
-        
+
         const users = usersResult[0];
-        const technicians = users.filter(u => u.role === 'technician');
-        const manager = users.find(u => u.role === 'manager');
-        
+        const technicians = users.filter((u) => u.role === "technician");
+        const manager = users.find((u) => u.role === "manager");
+
         // Obter IDs dos clientes
         const customersResult = await sequelize.query(`
           SELECT id, name FROM customers WHERE "organizationId" = ${organizationId};
         `);
-        
+
         const customersData = customersResult[0];
-        
+
         // Limpar ordens de serviço existentes
         await sequelize.query(`
           DELETE FROM service_orders WHERE "organizationId" = ${organizationId};
         `);
-        
+
         // Criar ordens de serviço de exemplo
         if (technicians.length > 0 && manager && customersData.length > 0) {
           const serviceOrders = [
             {
               title: "Manutenção Preventiva #1",
-              description: "Realizar manutenção preventiva nos equipamentos de rede.",
+              description:
+                "Realizar manutenção preventiva nos equipamentos de rede.",
               status: "pendente",
               priority: "media",
               assignedToId: technicians[0].id,
               assignedByUserId: manager.id,
               scheduledDate: new Date(Date.now() + 86400000).toISOString(), // Amanhã
-              customerId: customersData[0].id
+              customerId: customersData[0].id,
             },
             {
               title: "Manutenção Corretiva #2",
@@ -627,7 +644,7 @@ async function createSampleData() {
               assignedToId: technicians[0].id,
               assignedByUserId: manager.id,
               scheduledDate: new Date(Date.now() + 172800000).toISOString(), // 2 dias depois
-              customerId: customersData[1].id
+              customerId: customersData[1].id,
             },
             {
               title: "Instalação de Software #3",
@@ -637,31 +654,33 @@ async function createSampleData() {
               assignedToId: technicians[1].id,
               assignedByUserId: manager.id,
               scheduledDate: new Date(Date.now() + 259200000).toISOString(), // 3 dias depois
-              customerId: customersData[2].id
+              customerId: customersData[2].id,
             },
             {
               title: "Suporte Remoto #4",
-              description: "Fornecer suporte remoto para problemas de conectividade.",
+              description:
+                "Fornecer suporte remoto para problemas de conectividade.",
               status: "concluida",
               priority: "media",
               assignedToId: technicians[1].id,
               assignedByUserId: manager.id,
               scheduledDate: new Date(Date.now() - 86400000).toISOString(), // Ontem
               customerId: customersData[0].id,
-              closedAt: new Date().toISOString()
+              closedAt: new Date().toISOString(),
             },
             {
               title: "Atualização de Sistema #5",
-              description: "Atualizar sistema operacional em todos os computadores.",
+              description:
+                "Atualizar sistema operacional em todos os computadores.",
               status: "pendente",
               priority: "urgente",
               assignedToId: technicians[0].id,
               assignedByUserId: manager.id,
               scheduledDate: new Date(Date.now() + 345600000).toISOString(), // 4 dias depois
-              customerId: customersData[2].id
-            }
+              customerId: customersData[2].id,
+            },
           ];
-          
+
           for (const order of serviceOrders) {
             await sequelize.query(`
               INSERT INTO service_orders (
@@ -671,7 +690,9 @@ async function createSampleData() {
               ) VALUES (
                 ${organizationId}, '${order.title}', '${order.description}',
                 '${order.status}', '${order.priority}', ${order.assignedToId},
-                ${order.assignedByUserId}, '${order.scheduledDate}', ${order.customerId},
+                ${order.assignedByUserId}, '${order.scheduledDate}', ${
+              order.customerId
+            },
                 ${order.closedAt ? `'${order.closedAt}'` : null}, NOW(), NOW()
               );
             `);
@@ -692,29 +713,31 @@ async function setupDatabase() {
   try {
     console.log("Iniciando configuração do banco de dados...");
     console.log("Conectando ao banco de dados...");
-    
+
     await sequelize.authenticate();
     console.log("Conexão com o banco de dados estabelecida com sucesso!");
-    
+
     // Criar ENUMs
     await createENUMs();
-    
+
     // Tentar remover tabelas existentes (opcional, pode falhar em alguns provedores)
     try {
       await dropTablesIfExist();
     } catch (error) {
-      console.log("Aviso: Não foi possível remover tabelas existentes. Continuando com a criação...");
+      console.log(
+        "Aviso: Não foi possível remover tabelas existentes. Continuando com a criação..."
+      );
     }
-    
+
     // Criar tabelas
     await createTables();
-    
+
     // Corrigir restrições de colunas
     await fixColumnConstraints();
-    
+
     // Criar dados de exemplo
     await createSampleData();
-    
+
     console.log("=============================================");
     console.log("Banco de dados configurado com sucesso!");
     console.log("=============================================");
@@ -728,7 +751,9 @@ async function setupDatabase() {
     console.log("  Senha: owner123");
     console.log("");
     console.log("Outros usuários:");
-    console.log("  Email: gerente@example.com, tecnico1@example.com, tecnico2@example.com, assistente@example.com");
+    console.log(
+      "  Email: gerente@example.com, tecnico1@example.com, tecnico2@example.com, assistente@example.com"
+    );
     console.log("  Senha: member123");
     console.log("=============================================");
   } catch (error) {
