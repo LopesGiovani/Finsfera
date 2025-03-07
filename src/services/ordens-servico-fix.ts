@@ -29,14 +29,12 @@ function mapStatus(
   | "em_andamento"
   | "pausado"
   | "concluido"
-  | "cancelado"
-  | "faturado" {
+  | "cancelado" {
   const statusMap: Record<string, any> = {
     pendente: "novo",
     em_andamento: "em_andamento",
     concluida: "concluido",
-    reprovada: "cancelado",
-    faturado: "faturado",
+    reprovada: "cancelado"
   };
   return statusMap[apiStatus] || "novo";
 }
@@ -69,7 +67,6 @@ export async function obterCorrigido(id: number) {
           }
         : null,
       agendamento: new Date(order.scheduledDate).toLocaleDateString("pt-BR"),
-      valorTotal: 0, // Este valor não está disponível na API atual
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
