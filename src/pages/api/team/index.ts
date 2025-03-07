@@ -38,7 +38,9 @@ export default async function handler(
     if (
       user.role !== "owner" &&
       user.role !== "system_admin" &&
-      user.role !== "manager"
+      user.role !== "manager" &&
+      user.role !== "technician" &&
+      user.role !== "assistant"
     ) {
       return res
         .status(403)

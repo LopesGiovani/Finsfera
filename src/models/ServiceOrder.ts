@@ -16,12 +16,14 @@ interface ServiceOrderAttributes {
   title: string;
   description: string;
   status: "pendente" | "em_andamento" | "concluida" | "reprovada";
-  priority: "baixa" | "media" | "alta" | "urgente";
+  priority: "baixa" | "alta" | "urgente";
   assignedToId: number; // ID do usuário designado
   assignedByUserId: number; // ID de quem criou a OS
   scheduledDate: Date; // Data programada
   customerId?: number; // ID do cliente relacionado à OS
   closingLink?: string;
+  closingReason?: string; // Motivo do fechamento
+  reopenReason?: string; // Motivo da reabertura
   rejectionReason?: string;
   leaveOpenReason?: string;
   transferHistory?: TransferRecord[];
@@ -39,6 +41,8 @@ interface ServiceOrderCreationAttributes
     | "updatedAt"
     | "closedAt"
     | "closingLink"
+    | "closingReason"
+    | "reopenReason"
     | "rejectionReason"
     | "leaveOpenReason"
     | "transferHistory"
@@ -55,12 +59,14 @@ class ServiceOrder
   public title!: string;
   public description!: string;
   public status!: "pendente" | "em_andamento" | "concluida" | "reprovada";
-  public priority!: "baixa" | "media" | "alta" | "urgente";
+  public priority!: "baixa" | "alta" | "urgente";
   public assignedToId!: number;
   public assignedByUserId!: number;
   public scheduledDate!: Date;
   public customerId?: number;
   public closingLink?: string;
+  public closingReason?: string;
+  public reopenReason?: string;
   public rejectionReason?: string;
   public leaveOpenReason?: string;
   public transferHistory?: TransferRecord[];
@@ -105,8 +111,8 @@ ServiceOrder.init(
       allowNull: false,
     },
     priority: {
-      type: DataTypes.ENUM("baixa", "media", "alta", "urgente"),
-      defaultValue: "media",
+      type: DataTypes.ENUM("baixa", "alta", "urgente"),
+      defaultValue: "baixa",
       allowNull: false,
     },
     assignedToId: {
@@ -142,6 +148,14 @@ ServiceOrder.init(
     },
     closingLink: {
       type: DataTypes.STRING,
+      allowNull: true,
+    },
+    closingReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    reopenReason: {
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     rejectionReason: {

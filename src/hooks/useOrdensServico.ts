@@ -74,15 +74,34 @@ export function useMudarStatusOS() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) => {
+    mutationFn: ({
+      id,
+      status,
+      closingReason,
+      reopenReason,
+    }: {
+      id: number;
+      status: string;
+      closingReason?: string;
+      reopenReason?: string;
+    }) => {
       console.log(
-        `Hook useMudarStatusOS chamando mudarStatus com id=${id}, status=${status}`
+        `Hook useMudarStatusOS chamando mudarStatus com id=${id}, status=${status}, ${
+          closingReason ? `closingReason=${closingReason}` : "sem closingReason"
+        }, ${
+          reopenReason ? `reopenReason=${reopenReason}` : "sem reopenReason"
+        }`
       );
-      return OrdensServicoService.mudarStatus(id, status);
+      return OrdensServicoService.mudarStatus(
+        id,
+        status,
+        closingReason,
+        reopenReason
+      );
     },
     onMutate: async (variables) => {
       console.log("onMutate:", variables);
-      
+
       // Cancelar queries em andamento
       await queryClient.cancelQueries({
         queryKey: ["ordens-servico", variables.id],
@@ -93,7 +112,7 @@ export function useMudarStatusOS() {
         "ordens-servico",
         variables.id,
       ]);
-      
+
       console.log("Estado anterior da OS:", previousOS);
 
       // Otimisticamente atualizar o cache (interface responde imediatamente)
@@ -103,9 +122,9 @@ export function useMudarStatusOS() {
           status: variables.status as any,
           updatedAt: new Date().toISOString(),
         };
-        
+
         console.log("Estado atualizado da OS:", updatedOS);
-        
+
         queryClient.setQueryData(["ordens-servico", variables.id], updatedOS);
       }
 
@@ -113,7 +132,7 @@ export function useMudarStatusOS() {
     },
     onError: (err, variables, context) => {
       console.error("Erro ao mudar status:", err);
-      
+
       // Em caso de erro, reverter para o estado anterior
       if (context?.previousOS) {
         queryClient.setQueryData(
@@ -124,14 +143,58 @@ export function useMudarStatusOS() {
     },
     onSettled: (data, error, variables) => {
       console.log("onSettled:", { data, error, variables });
-      
+
       // Invalidar a query para recarregar os dados atualizados
       queryClient.invalidateQueries({
         queryKey: ["ordens-servico", variables.id],
       });
-      
+
       // Invalidar a lista de ordens de serviço
       queryClient.invalidateQueries({ queryKey: ["ordens-servico"] });
+
+      // Invalidar a timeline para mostrar o novo evento
+      queryClient.invalidateQueries({
+        queryKey: ["eventos-os", variables.id],
+      });
+    },
+  });
+}
+
+export function useReabrirOS() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      reopenReason,
+    }: {
+      id: number;
+      reopenReason: string;
+    }) => {
+      console.log(
+        `Hook useReabrirOS chamando reabrirOS com id=${id}, reopenReason=${reopenReason}`
+      );
+      return OrdensServicoService.reabrirOS(id, reopenReason);
+    },
+    onSuccess: (data, variables) => {
+      console.log("OS reaberta com sucesso:", data);
+
+      // Invalidar a consulta para esta OS específica
+      queryClient.invalidateQueries({
+        queryKey: ["ordens-servico", variables.id],
+      });
+
+      // Invalidar a lista de ordens de serviço
+      queryClient.invalidateQueries({ queryKey: ["ordens-servico"] });
+
+      // Invalidar eventos da timeline
+      queryClient.invalidateQueries({ queryKey: ["eventos-os", variables.id] });
+    },
+    onError: (error) => {
+      console.error("Erro ao reabrir OS:", error);
+    },
+    onSettled: (data, error, variables) => {
+      console.log("onSettled:", variables);
     },
   });
 }
@@ -141,10 +204,7 @@ function traduzirStatus(status: string): string {
   const traducoes: Record<string, string> = {
     novo: "Novo",
     em_andamento: "Em Andamento",
-    pausado: "Pausado",
     concluido: "Concluído",
-    cancelado: "Cancelado",
-    faturado: "Faturado",
   };
 
   return traducoes[status] || status;
@@ -164,6 +224,7 @@ export function useRegistrarTempo() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["ordens-servico", id] });
       queryClient.invalidateQueries({ queryKey: ["registros-tempo", id] });
+      queryClient.invalidateQueries({ queryKey: ["eventos-os", id] });
     },
   });
 }
@@ -192,6 +253,7 @@ export function useUploadArquivoOS() {
       OrdensServicoService.uploadArquivo(id, arquivo),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["arquivos-os", id] });
+      queryClient.invalidateQueries({ queryKey: ["eventos-os", id] });
     },
   });
 }

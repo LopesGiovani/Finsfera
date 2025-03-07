@@ -3,6 +3,7 @@ import Organization from "./Organization";
 import ServiceOrder from "./ServiceOrder";
 import ServiceOrderAttachment from "./ServiceOrderAttachment";
 import Customer from "./Customer";
+import TimelineEvent from "./TimelineEvent";
 
 // Associações entre User e Organization
 User.belongsTo(Organization, {
@@ -81,4 +82,31 @@ Customer.hasMany(ServiceOrder, {
   as: "serviceOrders",
 });
 
-export { User, Organization, ServiceOrder, ServiceOrderAttachment, Customer };
+// Associações entre TimelineEvent e ServiceOrder
+TimelineEvent.belongsTo(ServiceOrder, {
+  foreignKey: "serviceOrderId",
+  as: "serviceOrder",
+});
+ServiceOrder.hasMany(TimelineEvent, {
+  foreignKey: "serviceOrderId",
+  as: "timelineEvents",
+});
+
+// Associações entre TimelineEvent e User
+TimelineEvent.belongsTo(User, {
+  foreignKey: "userId",
+  as: "user",
+});
+User.hasMany(TimelineEvent, {
+  foreignKey: "userId",
+  as: "timelineEvents",
+});
+
+export {
+  User,
+  Organization,
+  ServiceOrder,
+  ServiceOrderAttachment,
+  Customer,
+  TimelineEvent,
+};

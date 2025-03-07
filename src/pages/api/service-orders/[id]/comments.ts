@@ -8,6 +8,7 @@ import {
 import { ServiceOrder, User } from "@/pages/api/_app-init";
 import sequelize from "@/lib/db";
 import { QueryTypes } from "sequelize";
+import { TimelineEventService } from "@/services/timelineEventService";
 
 // Interfaces para tipar os resultados das consultas
 interface CommentRow {
@@ -64,7 +65,9 @@ export default async function handler(
     const serviceOrder = await ServiceOrder.findByPk(serviceOrderId);
 
     if (!serviceOrder) {
-      return res.status(404).json({ message: "Ordem de serviço não encontrada" });
+      return res
+        .status(404)
+        .json({ message: "Ordem de serviço não encontrada" });
     }
 
     // GET - Listar comentários
@@ -82,7 +85,8 @@ export default async function handler(
       `);
 
       // Buscar comentários
-      const comments = await sequelize.query<CommentRow>(`
+      const comments = await sequelize.query<CommentRow>(
+        `
         SELECT 
           soc.id, 
           soc.text as texto, 
@@ -100,10 +104,12 @@ export default async function handler(
           soc."serviceOrderId" = :serviceOrderId
         ORDER BY 
           soc."createdAt" DESC
-      `, {
-        replacements: { serviceOrderId },
-        type: QueryTypes.SELECT
-      });
+      `,
+        {
+          replacements: { serviceOrderId },
+          type: QueryTypes.SELECT,
+        }
+      );
 
       // Formatar os comentários para o formato esperado pelo frontend
       const formattedComments = comments.map((comment) => ({
@@ -115,8 +121,8 @@ export default async function handler(
           id: comment["usuario.id"],
           nome: comment["usuario.nome"],
           email: comment["usuario.email"],
-          cargo: comment["usuario.cargo"]
-        }
+          cargo: comment["usuario.cargo"],
+        },
       }));
 
       return res.status(200).json(formattedComments);
@@ -127,7 +133,9 @@ export default async function handler(
       const { text } = req.body;
 
       if (!text || typeof text !== "string" || text.trim() === "") {
-        return res.status(400).json({ message: "Texto do comentário é obrigatório" });
+        return res
+          .status(400)
+          .json({ message: "Texto do comentário é obrigatório" });
       }
 
       // Criar tabela de comentários se não existir
@@ -144,25 +152,36 @@ export default async function handler(
 
       // Inserir comentário
       try {
-        const insertResult = await sequelize.query(`
+        const insertResult = await sequelize.query(
+          `
           INSERT INTO service_order_comments ("serviceOrderId", "userId", text, "createdAt", "updatedAt")
           VALUES (:serviceOrderId, :userId, :text, CURRENT_TIMESTAMP AT TIME ZONE 'UTC', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
           RETURNING id
-        `, {
-          replacements: { 
-            serviceOrderId, 
-            userId: user.id, 
-            text 
-          },
-          type: QueryTypes.INSERT
-        });
+        `,
+          {
+            replacements: {
+              serviceOrderId,
+              userId: user.id,
+              text,
+            },
+            type: QueryTypes.INSERT,
+          }
+        );
 
         // Extrair o ID do comentário inserido
         // @ts-ignore - Ignorando erros de tipo aqui, pois sabemos que o formato do resultado é [resultados, metadados]
         const commentId = insertResult[0][0].id;
 
+        // Registrar um evento na timeline
+        await TimelineEventService.registerComment({
+          serviceOrderId,
+          userId: user.id,
+          text,
+        });
+
         // Buscar o comentário recém-criado
-        const comments = await sequelize.query<CommentRow>(`
+        const comments = await sequelize.query<CommentRow>(
+          `
           SELECT 
             soc.id, 
             soc.text as texto, 
@@ -178,14 +197,18 @@ export default async function handler(
             users u ON soc."userId" = u.id
           WHERE 
             soc.id = :commentId
-        `, {
-          replacements: { commentId },
-          type: QueryTypes.SELECT
-        });
+        `,
+          {
+            replacements: { commentId },
+            type: QueryTypes.SELECT,
+          }
+        );
 
         // Verificar se temos um comentário válido
         if (!comments || comments.length === 0) {
-          return res.status(500).json({ message: "Erro ao recuperar o comentário criado" });
+          return res
+            .status(500)
+            .json({ message: "Erro ao recuperar o comentário criado" });
         }
 
         const newComment = comments[0];
@@ -200,8 +223,8 @@ export default async function handler(
             id: newComment["usuario.id"],
             nome: newComment["usuario.nome"],
             email: newComment["usuario.email"],
-            cargo: newComment["usuario.cargo"]
-          }
+            cargo: newComment["usuario.cargo"],
+          },
         };
 
         return res.status(201).json(formattedComment);
@@ -217,4 +240,4 @@ export default async function handler(
     console.error("Erro ao processar comentários:", error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
-} 
+}

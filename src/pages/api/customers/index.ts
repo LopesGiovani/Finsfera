@@ -28,7 +28,9 @@ export default async function handler(
     if (
       user.role !== "owner" &&
       user.role !== "system_admin" &&
-      user.role !== "manager"
+      user.role !== "manager" &&
+      user.role !== "technician" &&
+      user.role !== "assistant"
     ) {
       return res
         .status(403)
@@ -203,29 +205,30 @@ export default async function handler(
         });
       } catch (error: any) {
         console.error("Erro ao criar cliente:", error);
-        
+
         // Verificar se é um erro de validação
-        if (error.name === 'SequelizeValidationError') {
+        if (error.name === "SequelizeValidationError") {
           const validationErrors = error.errors.map((err: any) => ({
             field: err.path,
-            message: err.message
+            message: err.message,
           }));
-          
+
           return res.status(400).json({
             message: "Erro de validação",
-            errors: validationErrors
+            errors: validationErrors,
           });
         }
-        
+
         // Verificar se é um erro de chave única (documento duplicado)
-        if (error.name === 'SequelizeUniqueConstraintError') {
+        if (error.name === "SequelizeUniqueConstraintError") {
           return res.status(400).json({
-            message: "Já existe um cliente com este documento ou email"
+            message: "Já existe um cliente com este documento ou email",
           });
         }
-        
-        return res.status(500).json({ 
-          message: "Erro ao criar cliente. Verifique os dados e tente novamente." 
+
+        return res.status(500).json({
+          message:
+            "Erro ao criar cliente. Verifique os dados e tente novamente.",
         });
       }
     }

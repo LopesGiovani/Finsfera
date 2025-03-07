@@ -40,7 +40,7 @@ export default function NovaOS() {
   // Estados para os campos do formulário
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [prioridade, setPrioridade] = useState("media");
+  const [prioridade, setPrioridade] = useState("baixa");
   const [responsavelId, setResponsavelId] = useState<number | null>(null);
   const [clienteId, setClienteId] = useState<number | null>(null);
   const [agendamento, setAgendamento] = useState("");
@@ -263,7 +263,6 @@ export default function NovaOS() {
                     onChange={(e) => setPrioridade(e.target.value)}
                   >
                     <option value="baixa">Baixa</option>
-                    <option value="media">Média</option>
                     <option value="alta">Alta</option>
                     <option value="urgente">Urgente</option>
                   </select>

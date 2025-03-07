@@ -5,18 +5,16 @@ export interface OS {
   numero: string;
   titulo: string;
   descricao: string;
-  status:
-    | "novo"
-    | "em_andamento"
-    | "pausado"
-    | "concluido"
-    | "cancelado";
+  status: "novo" | "em_andamento" | "concluido";
   cliente: Cliente;
   responsavel: Usuario | null;
   agendamento: string;
   createdAt: string;
   updatedAt: string;
   closingLink?: string; // Link externo opcional
+  closingReason?: string; // Motivo do fechamento
+  reopenReason?: string; // Motivo da reabertura
+  closedAt?: string; // Data de fechamento
 }
 
 // Interface que mapeia os dados da API para o formato esperado pelo frontend
@@ -32,6 +30,8 @@ export interface ServiceOrderAPI {
   scheduledDate: string;
   customerId?: number;
   closingLink?: string; // Link externo opcional
+  closingReason?: string; // Motivo do fechamento
+  reopenReason?: string; // Motivo da reabertura
   createdAt: string;
   updatedAt: string;
   assignedTo?: {
@@ -53,6 +53,7 @@ export interface ServiceOrderAPI {
     document: string;
     phone: string;
   };
+  closedAt?: string; // Data de fechamento
 }
 
 export interface Cliente {
@@ -98,83 +99,92 @@ export interface Notificacao {
 }
 
 function mapApiResponseToOS(apiResponse: ServiceOrderAPI[]): OS[] {
-  console.log("Resposta da API (antes do mapeamento):", JSON.stringify(apiResponse, null, 2));
-  
-  const result = apiResponse.map(order => {
-    if (!order) return null;
+  console.log(
+    "Resposta da API (antes do mapeamento):",
+    JSON.stringify(apiResponse, null, 2)
+  );
 
-    const mappedOrder = {
-      id: order.id,
-      numero: `OS-${order.id.toString().padStart(4, '0')}`,
-      titulo: order.title,
-      descricao: order.description,
-      status: mapStatus(order.status),
-      cliente: order.customer ? {
-        id: order.customer.id,
-        nome: order.customer.name,
-        email: order.customer.email,
-        telefone: order.customer.phone,
-      } : {
-        id: 0,
-        nome: 'Cliente não atribuído',
-        email: '',
-        telefone: '',
-      },
-      responsavel: order.assignedTo
-        ? {
-            id: order.assignedTo.id,
-            nome: order.assignedTo.name,
-            email: order.assignedTo.email,
-            cargo: order.assignedTo.role,
-          }
-        : null,
-      agendamento: order.scheduledDate ? new Date(order.scheduledDate).toLocaleDateString("pt-BR") : '',
-      createdAt: order.createdAt || '',
-      updatedAt: order.updatedAt || '',
-      closingLink: order.closingLink || '',
-    };
-    
-    console.log(`OS ID ${order.id} com status "${order.status}" mapeada para status "${mappedOrder.status}"`);
-    
-    return mappedOrder;
-  }).filter(Boolean) as OS[];
-  
+  const result = apiResponse
+    .map((order) => {
+      if (!order) return null;
+
+      const mappedOrder = {
+        id: order.id,
+        numero: `OS-${order.id.toString().padStart(4, "0")}`,
+        titulo: order.title,
+        descricao: order.description,
+        status: mapStatus(order.status),
+        cliente: order.customer
+          ? {
+              id: order.customer.id,
+              nome: order.customer.name,
+              email: order.customer.email,
+              telefone: order.customer.phone,
+            }
+          : {
+              id: 0,
+              nome: "Cliente não atribuído",
+              email: "",
+              telefone: "",
+            },
+        responsavel: order.assignedTo
+          ? {
+              id: order.assignedTo.id,
+              nome: order.assignedTo.name,
+              email: order.assignedTo.email,
+              cargo: order.assignedTo.role,
+            }
+          : null,
+        agendamento: order.scheduledDate
+          ? new Date(order.scheduledDate).toLocaleDateString("pt-BR")
+          : "",
+        createdAt: order.createdAt || "",
+        updatedAt: order.updatedAt || "",
+        closingLink: order.closingLink || "",
+        closingReason: order.closingReason || "",
+        reopenReason: order.reopenReason || "",
+        closedAt: order.closedAt || "",
+      };
+
+      console.log(
+        `OS ID ${order.id} com status "${order.status}" mapeada para status "${mappedOrder.status}"`
+      );
+
+      return mappedOrder;
+    })
+    .filter(Boolean) as OS[];
+
   console.log("Dados após mapeamento:", JSON.stringify(result, null, 2));
-  
+
   return result;
 }
 
-function mapStatus(
-  apiStatus: string
-):
-  | "novo"
-  | "em_andamento"
-  | "pausado"
-  | "concluido"
-  | "cancelado" {
+function mapStatus(apiStatus: string): "novo" | "em_andamento" | "concluido" {
   // Log para debug
   console.log(`Mapeando status da API: "${apiStatus}"`);
-  
+
   // Normalizar o status (remover espaços, converter para minúsculas)
   const normalizedStatus = apiStatus?.toLowerCase()?.trim() || "";
-  
+
   const statusMap: Record<string, any> = {
     pendente: "novo",
     em_andamento: "em_andamento",
     concluida: "concluido",
-    reprovada: "cancelado"
+    reprovada: "novo", // Agora mapeia reprovada para novo
   };
-  
+
   // Se o status já estiver no formato do frontend, retorná-lo diretamente
-  if (["novo", "em_andamento", "pausado", "concluido", "cancelado"].includes(normalizedStatus)) {
-    console.log(`  - Status já está no formato do frontend: "${normalizedStatus}"`);
+  if (["novo", "em_andamento", "concluido"].includes(normalizedStatus)) {
+    console.log(
+      `  - Status já está no formato do frontend: "${normalizedStatus}"`
+    );
     return normalizedStatus as any;
   }
-  
+
   // Adiciona log para debug
   const mappedStatus = statusMap[normalizedStatus] || "novo";
   console.log(`  - Status mapeado: "${normalizedStatus}" -> "${mappedStatus}"`);
-  
+
   return mappedStatus;
 }
 
@@ -186,10 +196,8 @@ function mapStatusToApi(frontendStatus: string): string {
       return "em_andamento";
     case "concluido":
       return "concluida";
-    case "cancelado":
-      return "reprovada";
     default:
-      return frontendStatus; // Retornar o status original se não houver mapeamento
+      return "pendente"; // Por padrão retorna pendente
   }
 }
 
@@ -210,7 +218,7 @@ export const OrdensServicoService = {
       const response = await api.get(`/service-orders/${id}`);
       const os = mapApiResponseToOS([response.data])[0];
       return os;
-      } catch (error) {
+    } catch (error) {
       console.error(`Erro ao buscar ordem de serviço ${id}:`, error);
       throw new Error("Não foi possível carregar a ordem de serviço");
     }
@@ -244,42 +252,43 @@ export const OrdensServicoService = {
   async atualizar(id: number, dados: Partial<OS>) {
     try {
       console.log(`Atualizando OS ${id} com dados:`, dados);
-      
+
       // Preparar dados para envio à API
       const dadosParaAPI: any = { ...dados };
-      
+
       // Converter agendamento para o formato da API se estiver presente
       if (dados.agendamento) {
         // Verificar se a data já está no formato ISO
         if (!/^\d{4}-\d{2}-\d{2}/.test(dados.agendamento)) {
           // Converter de DD/MM/YYYY para YYYY-MM-DD
-          const partes = dados.agendamento.split('/');
+          const partes = dados.agendamento.split("/");
           if (partes.length === 3) {
             dadosParaAPI.scheduledDate = `${partes[2]}-${partes[1]}-${partes[0]}`;
           }
         } else {
           dadosParaAPI.scheduledDate = dados.agendamento;
         }
-        
+
         // Remover o campo agendamento para não confundir a API
         delete dadosParaAPI.agendamento;
       }
-      
+
       // Mapear outros campos do frontend para a API
       if (dados.titulo !== undefined) dadosParaAPI.title = dados.titulo;
-      if (dados.descricao !== undefined) dadosParaAPI.description = dados.descricao;
-      
+      if (dados.descricao !== undefined)
+        dadosParaAPI.description = dados.descricao;
+
       // Remover campos que não existem na API
       delete dadosParaAPI.titulo;
       delete dadosParaAPI.descricao;
       delete dadosParaAPI.numero;
       delete dadosParaAPI.cliente;
       delete dadosParaAPI.responsavel;
-      
+
       console.log("Dados formatados para API:", dadosParaAPI);
-      
+
       const response = await api.put(`/service-orders/${id}`, dadosParaAPI);
-      
+
       return mapApiResponseToOS([response.data])[0];
     } catch (error) {
       console.error(`Erro ao atualizar ordem de serviço ${id}:`, error);
@@ -287,19 +296,104 @@ export const OrdensServicoService = {
     }
   },
 
-  async mudarStatus(id: number, status: string) {
+  async mudarStatus(
+    id: number,
+    status: string,
+    closingReason?: string,
+    reopenReason?: string
+  ) {
     try {
-      // Converte o status do frontend para o formato da API
-        const apiStatus = mapStatusToApi(status);
-      
-      const response = await api.patch(`/service-orders/${id}/status`, {
-            status: apiStatus,
-      });
-      
+      console.log(`Tentando mudar status da OS ${id}`);
+      console.log(`  - Novo status: ${status}`);
+      if (closingReason)
+        console.log(`  - Motivo do fechamento: ${closingReason}`);
+      if (reopenReason)
+        console.log(`  - Motivo da reabertura: ${reopenReason}`);
+
+      // Mapear o status do frontend para o formato da API
+      const statusAPI = mapStatusToApi(status);
+
+      // Preparar os dados a serem enviados para a API
+      const dados: any = {
+        status: statusAPI,
+      };
+
+      // Incluir motivo de fechamento se fornecido
+      if (closingReason) {
+        dados.closingReason = closingReason;
+      }
+
+      // Incluir motivo de reabertura se fornecido
+      if (reopenReason) {
+        dados.reopenReason = reopenReason;
+      }
+
+      // Enviar requisição para a API
+      const response = await api.patch(`/service-orders/${id}/status`, dados);
       return mapApiResponseToOS([response.data])[0];
-      } catch (error) {
+    } catch (error: any) {
       console.error(`Erro ao mudar status da OS ${id}:`, error);
-      throw new Error("Não foi possível atualizar o status da ordem de serviço");
+
+      // Melhorar a mensagem de erro para o usuário
+      let mensagem = "Não foi possível alterar o status";
+
+      if (error.response) {
+        if (error.response.status === 400) {
+          if (error.response.data && error.response.data.message) {
+            mensagem = `Erro: ${error.response.data.message}`;
+          } else {
+            mensagem = "Dados inválidos para alteração de status";
+          }
+        } else if (error.response.status === 403) {
+          mensagem = "Você não tem permissão para alterar esta OS";
+        } else if (error.response.status === 404) {
+          mensagem = "Ordem de serviço não encontrada";
+        } else if (error.response.status === 500) {
+          mensagem = "Erro interno do servidor";
+        }
+      }
+
+      throw new Error(mensagem);
+    }
+  },
+
+  async reabrirOS(id: number, reopenReason: string) {
+    try {
+      console.log(`Reabrindo OS ${id} com motivo: ${reopenReason}`);
+
+      const dadosParaAPI = {
+        status: "pendente",
+        reopenReason,
+      };
+
+      const response = await api.patch(
+        `/service-orders/${id}/status`,
+        dadosParaAPI
+      );
+      return mapApiResponseToOS([response.data])[0];
+    } catch (error: any) {
+      console.error(`Erro ao reabrir OS ${id}:`, error);
+
+      // Melhorar a mensagem de erro para o usuário
+      let mensagem = "Não foi possível reabrir a ordem de serviço";
+
+      if (error.response) {
+        if (error.response.status === 400) {
+          if (error.response.data && error.response.data.message) {
+            mensagem = `Erro: ${error.response.data.message}`;
+          } else {
+            mensagem = "Dados inválidos para reabertura";
+          }
+        } else if (error.response.status === 403) {
+          mensagem = "Você não tem permissão para reabrir esta OS";
+        } else if (error.response.status === 404) {
+          mensagem = "Ordem de serviço não encontrada";
+        } else if (error.response.status === 500) {
+          mensagem = "Erro interno do servidor";
+        }
+      }
+
+      throw new Error(mensagem);
     }
   },
 
@@ -344,7 +438,7 @@ export const OrdensServicoService = {
           },
         }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error(`Erro ao fazer upload de arquivo para OS ${id}:`, error);
@@ -444,7 +538,10 @@ export const OrdensServicoService = {
       );
       return response.data;
     } catch (error) {
-      console.error(`Erro ao aplicar template ${templateId} à OS ${osId}:`, error);
+      console.error(
+        `Erro ao aplicar template ${templateId} à OS ${osId}:`,
+        error
+      );
       throw new Error("Não foi possível aplicar o template");
     }
   },
@@ -473,14 +570,14 @@ export const OrdensServicoService = {
     try {
       const response = await api.get("/service-orders/report", {
         params: {
-        type: params.tipo,
+          type: params.tipo,
           startDate: params.dataInicio,
           endDate: params.dataFim,
           format: params.formato || "pdf",
         },
         responseType: "blob",
       });
-      
+
       return response.data;
     } catch (error) {
       console.error("Erro ao gerar relatório:", error);
@@ -511,8 +608,8 @@ export const OrdensServicoService = {
   async listarEventos(osId: number) {
     try {
       // Usar o novo endpoint simplificado sem dependência de estrutura de pasta com colchetes
-      const response = await api.get('/timeline-events', {
-        params: { orderId: osId }
+      const response = await api.get("/timeline-events", {
+        params: { orderId: osId },
       });
       console.log("Resposta da API de eventos:", response.data);
       return response.data;
@@ -529,7 +626,7 @@ export const OrdensServicoService = {
       return {
         sincronizados: 0,
         total: 0,
-        success: true
+        success: true,
       };
     } catch (error) {
       console.error("Erro ao verificar integridade dos dados:", error);
@@ -543,7 +640,7 @@ export const OrdensServicoService = {
       // este método agora apenas retorna um resultado de sucesso
       return {
         success: true,
-        message: "Dados limpos com sucesso"
+        message: "Dados limpos com sucesso",
       };
     } catch (error) {
       console.error("Erro ao limpar dados:", error);

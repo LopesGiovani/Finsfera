@@ -8,7 +8,7 @@ import {
 import { ServiceOrder, User, Customer } from "@/pages/api/_app-init";
 import { TimelineEventService } from "@/services/timelineEventService";
 
-// Handler para atualizar o status de uma ordem de serviço específica
+// Handler para transferir uma ordem de serviço para outro funcionário
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -34,8 +34,8 @@ export default async function handler(
       organizationAccessMiddleware(authenticatedReq, res, () => resolve());
     });
 
-    // Verificar se o método é PATCH
-    if (req.method !== "PATCH") {
+    // Verificar se o método é POST
+    if (req.method !== "POST") {
       return res.status(405).json({ message: "Método não permitido" });
     }
 
@@ -48,33 +48,22 @@ export default async function handler(
 
     const serviceOrderId = parseInt(id);
 
-    // Obter o novo status do corpo da requisição
-    const { status, closingReason, reopenReason } = req.body;
+    // Obter os dados da transferência do corpo da requisição
+    const { assignedToId, reason } = req.body;
 
-    if (!status) {
-      return res.status(400).json({ message: "Status não fornecido" });
+    if (!assignedToId) {
+      return res
+        .status(400)
+        .json({ message: "ID do novo responsável não fornecido" });
     }
 
-    // Status válidos
-    const validStatuses = [
-      "pendente",
-      "em_andamento",
-      "concluida",
-      "reprovada",
-    ];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Status inválido" });
+    if (!reason) {
+      return res
+        .status(400)
+        .json({ message: "Motivo da transferência não fornecido" });
     }
 
-    // Se o status for "concluida", closingReason é obrigatório
-    if (status === "concluida" && !closingReason) {
-      return res.status(400).json({
-        message:
-          "O motivo de fechamento (closingReason) é obrigatório para concluir uma OS",
-      });
-    }
-
-    // Buscar a OS para verificar se está sendo reaberta
+    // Buscar a OS para verificar permissões e dados atuais
     const serviceOrder = await ServiceOrder.findOne({
       where: { id: serviceOrderId },
       include: [
@@ -102,19 +91,7 @@ export default async function handler(
         .json({ message: "Ordem de serviço não encontrada" });
     }
 
-    // Verificar se a OS está sendo reaberta (mudando de concluída para pendente)
-    const isReopening =
-      serviceOrder.status === "concluida" && status === "pendente";
-
-    // Se está reabrindo, o motivo de reabertura é obrigatório
-    if (isReopening && !reopenReason) {
-      return res.status(400).json({
-        message:
-          "O motivo de reabertura (reopenReason) é obrigatório para reabrir uma OS",
-      });
-    }
-
-    // Verificar permissão para editar (apenas admin, owner, manager ou responsável)
+    // Verificar permissão para transferir (apenas admin, owner, manager ou responsável atual)
     if (
       user.role !== "system_admin" &&
       user.role !== "owner" &&
@@ -122,41 +99,65 @@ export default async function handler(
       serviceOrder.assignedToId !== user.id
     ) {
       return res.status(403).json({
-        message: "Sem permissão para editar esta ordem de serviço",
+        message: "Sem permissão para transferir esta ordem de serviço",
       });
     }
 
-    // Salvar o status anterior para o registro do evento
-    const oldStatus = serviceOrder.status;
+    // Verificar se o novo responsável existe
+    const newAssignee = await User.findOne({
+      where: { id: assignedToId, organizationId: user.organizationId },
+    });
 
-    // Preparar o objeto de atualização
-    const updateData: any = { status };
-
-    // Adicionar closingReason se fornecido
-    if (closingReason) {
-      updateData.closingReason = closingReason;
+    if (!newAssignee) {
+      return res
+        .status(404)
+        .json({ message: "Novo responsável não encontrado" });
     }
 
-    // Adicionar reopenReason se fornecido (ao reabrir uma OS)
-    if (reopenReason) {
-      updateData.reopenReason = reopenReason;
+    // Verificar se não está transferindo para o mesmo responsável
+    if (serviceOrder.assignedToId === assignedToId) {
+      return res
+        .status(400)
+        .json({ message: "A OS já está atribuída a este usuário" });
     }
 
-    // Atualizar o status e outros campos
-    await serviceOrder.update(updateData);
+    // Criar registro de transferência
+    const transferRecord = {
+      date: new Date(),
+      fromUserId: serviceOrder.assignedToId,
+      toUserId: assignedToId,
+      reason: reason,
+    };
 
-    // Se o status for "concluida", também definir closedAt como a data atual
-    if (status === "concluida" && !serviceOrder.closedAt) {
-      await serviceOrder.update({ closedAt: new Date() });
+    // Obter histórico de transferências existente ou inicializar um novo array
+    const transferHistory = Array.isArray(serviceOrder.transferHistory)
+      ? [...serviceOrder.transferHistory, transferRecord]
+      : [transferRecord];
+
+    // Atualizar a OS com o novo responsável e histórico de transferências
+    await serviceOrder.update({
+      assignedToId: assignedToId,
+      transferHistory: transferHistory,
+    });
+
+    // Obter o nome do usuário anterior
+    let fromUserName = "Usuário anterior";
+    if (serviceOrder.assignedToId) {
+      const previousUser = await User.findByPk(serviceOrder.assignedToId);
+      if (previousUser) {
+        fromUserName = previousUser.get("name") || fromUserName;
+      }
     }
 
-    // Registrar o evento de mudança de status na timeline
-    await TimelineEventService.registerStatusChange({
+    // Registrar evento na timeline
+    await TimelineEventService.registerTransfer({
       serviceOrderId,
       userId: user.id,
-      oldStatus,
-      newStatus: status,
-      reason: closingReason || reopenReason,
+      fromUserId: serviceOrder.assignedToId,
+      fromUserName: fromUserName,
+      toUserId: assignedToId,
+      toUserName: newAssignee.name,
+      reason: reason,
     });
 
     // Buscar a ordem de serviço atualizada
@@ -183,7 +184,7 @@ export default async function handler(
 
     return res.status(200).json(updatedServiceOrder);
   } catch (error) {
-    console.error("Erro ao atualizar status da ordem de serviço:", error);
+    console.error("Erro ao transferir ordem de serviço:", error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
 }

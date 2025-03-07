@@ -4,21 +4,18 @@ import {
   organizationAccessMiddleware,
   AuthenticatedRequest,
 } from "@/middleware/authMiddleware";
+import { Op } from "sequelize";
 // Importar os modelos pelo arquivo de inicialização para garantir que as associações sejam carregadas
 import { ServiceOrder, User, Customer } from "@/pages/api/_app-init";
-import { Op } from "sequelize";
+import { TimelineEventService } from "@/services/timelineEventService";
 
-// Função para normalizar texto (remover acentos e converter para minúsculas)
+// Helper para normalizar texto (remover acentos, converter para minúsculas)
 function normalizeText(text: string): string {
-  if (!text) return '';
-  
-  // Converter para minúsculas
-  let normalized = text.toLowerCase();
-  
-  // Remover acentos
-  normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  
-  return normalized;
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
 
 // Handler para gerenciar ordens de serviço
@@ -56,7 +53,7 @@ export default async function handler(
         scheduledDateStart,
         scheduledDateEnd,
         search,
-        page = "1"
+        page = "1",
       } = req.query;
 
       // Filtros
@@ -140,7 +137,7 @@ export default async function handler(
         // Se houver termo de busca, fazer uma busca mais abrangente
         if (search) {
           const searchTerm = `%${search}%`;
-          
+
           // Primeiro, buscar por correspondências diretas
           const directMatches = await ServiceOrder.findAll({
             where: {
@@ -148,13 +145,15 @@ export default async function handler(
               [Op.or]: [
                 { title: { [Op.iLike]: searchTerm } },
                 { description: { [Op.iLike]: searchTerm } },
-                ...(isNaN(parseInt(search as string)) ? [] : [{ id: parseInt(search as string) }]),
+                ...(isNaN(parseInt(search as string))
+                  ? []
+                  : [{ id: parseInt(search as string) }]),
               ],
             },
             include: includeConfig,
             order: [["createdAt", "DESC"]],
           });
-          
+
           // Segundo, buscar por clientes correspondentes
           const clientMatches = await ServiceOrder.findAll({
             where: whereClause,
@@ -171,7 +170,7 @@ export default async function handler(
             ],
             order: [["createdAt", "DESC"]],
           });
-          
+
           // Terceiro, buscar por responsáveis correspondentes
           const assignedToMatches = await ServiceOrder.findAll({
             where: whereClause,
@@ -189,7 +188,7 @@ export default async function handler(
             ],
             order: [["createdAt", "DESC"]],
           });
-          
+
           // Quarto, busca por agendamento (data)
           const today = new Date();
           const agendamentoMatches = await ServiceOrder.findAll({
@@ -197,28 +196,37 @@ export default async function handler(
             include: includeConfig,
             order: [["createdAt", "DESC"]],
           });
-          
+
           // Filtrar os resultados do agendamento manualmente
-          const filteredAgendamentoMatches = agendamentoMatches.filter((order: any) => {
-            if (order.scheduledDate) {
-              const date = new Date(order.scheduledDate);
-              const formattedDate = date.toLocaleDateString('pt-BR'); // DD/MM/YYYY
-              return normalizeText(formattedDate).includes(normalizeText(search as string));
+          const filteredAgendamentoMatches = agendamentoMatches.filter(
+            (order: any) => {
+              if (order.scheduledDate) {
+                const date = new Date(order.scheduledDate);
+                const formattedDate = date.toLocaleDateString("pt-BR"); // DD/MM/YYYY
+                return normalizeText(formattedDate).includes(
+                  normalizeText(search as string)
+                );
+              }
+              return false;
             }
-            return false;
-          });
-          
+          );
+
           // Combinar resultados e remover duplicatas
-          const allMatches = [...directMatches, ...clientMatches, ...assignedToMatches, ...filteredAgendamentoMatches];
+          const allMatches = [
+            ...directMatches,
+            ...clientMatches,
+            ...assignedToMatches,
+            ...filteredAgendamentoMatches,
+          ];
           const uniqueIds = new Set();
-          const filteredOrders = allMatches.filter(order => {
+          const filteredOrders = allMatches.filter((order) => {
             if (uniqueIds.has(order.id)) return false;
             uniqueIds.add(order.id);
             return true;
           });
-          
+
           totalCount = filteredOrders.length;
-          
+
           // Aplicar paginação manualmente
           serviceOrders = filteredOrders.slice(offset, offset + pageSize);
         } else {
@@ -231,22 +239,24 @@ export default async function handler(
             offset: offset,
             distinct: true,
           });
-          
+
           serviceOrders = result.rows;
           totalCount = result.count;
         }
 
         // Adicionar header com total para paginação
         res.setHeader("X-Total-Count", totalCount.toString());
-        
+
         return res.status(200).json(serviceOrders);
       } catch (error) {
         console.error("Erro ao buscar ordens de serviço:", error);
-        return res.status(500).json({ message: "Erro interno ao buscar ordens de serviço" });
+        return res
+          .status(500)
+          .json({ message: "Erro interno ao buscar ordens de serviço" });
       }
     }
 
-    // POST - Criar ordem de serviço
+    // POST - Criar nova ordem de serviço
     if (req.method === "POST") {
       const {
         title,
@@ -261,19 +271,19 @@ export default async function handler(
       if (!title || !description || !assignedToId || !scheduledDate) {
         return res.status(400).json({
           message:
-            "Campos obrigatórios: título, descrição, responsável e data programada",
+            "Título, descrição, responsável e data de agendamento são obrigatórios",
         });
       }
 
-      // Definir o ID da organização
+      // Validar data de agendamento
+      const scheduledDateObj = new Date(scheduledDate);
+      if (isNaN(scheduledDateObj.getTime())) {
+        return res
+          .status(400)
+          .json({ message: "Data de agendamento inválida" });
+      }
+
       const organizationId = user.organizationId;
-
-      if (!organizationId) {
-        return res.status(400).json({
-          message:
-            "Usuário sem organização associada não pode criar ordens de serviço",
-        });
-      }
 
       // Verificar se o responsável existe e pertence à mesma organização
       const assignedTo = await User.findOne({
@@ -294,13 +304,27 @@ export default async function handler(
       const newServiceOrder = await ServiceOrder.create({
         title,
         description,
-        priority: priority || "media",
+        priority: priority || "baixa",
         organizationId,
         assignedToId,
         assignedByUserId: user.id,
         scheduledDate: new Date(scheduledDate),
         status: "pendente",
         customerId: customerId || null,
+      });
+
+      // Registrar evento de criação
+      await TimelineEventService.registerCreation({
+        serviceOrderId: newServiceOrder.id,
+        userId: user.id,
+      });
+
+      // Registrar evento de atribuição de responsável
+      await TimelineEventService.registerAssignment({
+        serviceOrderId: newServiceOrder.id,
+        userId: user.id,
+        assignedToId: assignedToId,
+        assignedToName: assignedTo.name,
       });
 
       return res.status(201).json({

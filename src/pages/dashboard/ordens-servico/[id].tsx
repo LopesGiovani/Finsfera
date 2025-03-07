@@ -13,12 +13,16 @@ import { TimelineOS } from "@/components/ordens-servico/TimelineOS";
 import { ComentariosOS } from "@/components/ordens-servico/ComentariosOS";
 import { StatusOS } from "@/components/ordens-servico/StatusOS";
 import { RegistrarTempoModal } from "@/components/ordens-servico/RegistrarTempoModal";
+import { ClosingReasonModal } from "@/components/ordens-servico/ClosingReasonModal";
+import { ReopenReasonModal } from "@/components/ordens-servico/ReopenReasonModal";
+import { TransferirOS } from "@/components/ordens-servico/TransferirOS";
 import { useRouter } from "next/router";
 import {
   useOrdemServico,
   useMudarStatusOS,
   useRegistrarTempo,
   useEventosOS,
+  useReabrirOS,
 } from "@/hooks/useOrdensServico";
 import { OrdensServicoService, OS } from "@/services/ordens-servico";
 import { formatarData } from "@/utils/formatters";
@@ -36,7 +40,21 @@ interface TabProps {
 const DetalhesTab = ({ os }: TabProps) => (
   <div className="space-y-4 p-4">
     <h2 className="text-2xl font-bold">{os?.titulo}</h2>
-    <p className="text-gray-600">{os?.descricao}</p>
+
+    <div className="mb-6">
+      <p className="text-gray-600">{os?.descricao}</p>
+
+      {/* Motivo de fechamento - exibido logo após a descrição quando a OS estiver concluída */}
+      {os?.status === "concluido" && os?.closingReason && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
+          <h3 className="text-lg font-medium text-green-800 mb-2">
+            Motivo do Fechamento
+          </h3>
+          <p className="text-green-700">{os.closingReason}</p>
+        </div>
+      )}
+    </div>
+
     <div className="grid grid-cols-2 gap-4">
       <div>
         <span className="font-medium">Status:</span>
@@ -48,8 +66,20 @@ const DetalhesTab = ({ os }: TabProps) => (
       </div>
       <div>
         <span className="font-medium">Agendamento:</span>
-        <span className="ml-2">{os?.agendamento ? formatarData(os.agendamento) : "Não definido"}</span>
+        <span className="ml-2">
+          {os?.agendamento ? formatarData(os.agendamento) : "Não definido"}
+        </span>
       </div>
+      <div>
+        <span className="font-medium">Cliente:</span>
+        <span className="ml-2">{os?.cliente?.nome || "Não atribuído"}</span>
+      </div>
+      {os?.closedAt && (
+        <div>
+          <span className="font-medium">Data de Conclusão:</span>
+          <span className="ml-2">{formatarData(os.closedAt, true)}</span>
+        </div>
+      )}
     </div>
   </div>
 );
@@ -75,19 +105,19 @@ const converterDataParaFormatoInput = (dataString: string): string => {
     if (/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
       return dataString;
     }
-    
+
     // Tentar converter do formato DD/MM/YYYY para YYYY-MM-DD
-    const partes = dataString.split('/');
+    const partes = dataString.split("/");
     if (partes.length === 3) {
       const [dia, mes, ano] = partes;
-      return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+      return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
     }
-    
+
     // Se não conseguir converter, retornar string vazia
-    return '';
+    return "";
   } catch (error) {
     console.error("Erro ao converter data:", error);
-    return '';
+    return "";
   }
 };
 
@@ -98,13 +128,16 @@ export default function VisualizarOS() {
     data: os,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useOrdemServico(osId ? Number(osId) : 0);
   const { mutate: mudarStatus } = useMudarStatusOS();
   const { mutate: registrarTempo } = useRegistrarTempo();
-  const { data: eventos, isLoading: isLoadingEventos } = useEventosOS(
-    osId ? Number(osId) : 0
-  );
+  const {
+    data: eventos,
+    isLoading: isLoadingEventos,
+    refetch: refetchEventos,
+  } = useEventosOS(osId ? Number(osId) : 0);
+  const { mutate: reabrirOS } = useReabrirOS();
 
   // Estado local otimista da OS que podemos atualizar mesmo quando a API falha
   const [localOS, setLocalOS] = useState<typeof os | null>(null);
@@ -132,11 +165,14 @@ export default function VisualizarOS() {
   }, [os, localOS]);
 
   const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
+  const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
     "detalhes" | "timeline" | "comentarios" | "edicao"
   >("detalhes");
-  const [isRegistrarTempoModalOpen, setIsRegistrarTempoModalOpen] = useState(false);
+  const [isRegistrarTempoModalOpen, setIsRegistrarTempoModalOpen] =
+    useState(false);
 
   // Estado para o link externo
   const [linkExterno, setLinkExterno] = useState("");
@@ -159,23 +195,34 @@ export default function VisualizarOS() {
     setIsRegistrarTempoModalOpen(false);
   };
 
-  const handleChangeStatus = (novoStatus: string) => {
+  const handleChangeStatus = (novoStatus: string, closingReason?: string) => {
     if (!osId) return;
-    
-    console.log(`Alterando status para: ${novoStatus}`);
+
+    console.log(
+      `Alterando status para: ${novoStatus}${
+        closingReason ? `, com motivo: ${closingReason}` : ""
+      }`
+    );
+
+    // Validar se temos o motivo quando necessário
+    if (novoStatus === "concluido" && !closingReason) {
+      toast.error("É necessário informar o motivo para concluir a OS");
+      return;
+    }
+
     setIsChangingStatus(true);
-    
+
     // Atualizar o estado local imediatamente para feedback visual
     if (os) {
       const osAtualizado = {
         ...os,
-        status: novoStatus as any
+        status: novoStatus as any,
       };
       setLocalOS(osAtualizado);
     }
 
     mudarStatus(
-      { id: Number(osId), status: novoStatus },
+      { id: Number(osId), status: novoStatus, closingReason },
       {
         onSuccess: (data) => {
           console.log("Status alterado com sucesso:", data);
@@ -184,23 +231,47 @@ export default function VisualizarOS() {
           // Atualizar o estado local com os dados da API
           setLocalOS(data);
           refetch(); // Recarregar os dados da OS
-          
+
+          // Atualizar a timeline
+          refetchEventos();
+
           // Mostrar mensagem de sucesso
-          toast.success(`Status alterado para ${novoStatus}`);
+          if (novoStatus === "concluido") {
+            toast.success(`OS concluída com sucesso!`);
+          } else {
+            toast.success(`Status alterado para ${novoStatus}`);
+          }
         },
-        onError: (error) => {
+        onError: (error: any) => {
           console.error("Erro ao alterar status:", error);
           setIsChangingStatus(false);
-          
+
           // Reverter para o status original em caso de erro
           if (os) {
             setLocalOS(os);
           }
-          
-          toast.error(`Não foi possível alterar o status para ${novoStatus}`);
+
+          // Exibir mensagem de erro amigável
+          const mensagem =
+            error.message ||
+            `Não foi possível alterar o status para ${novoStatus}`;
+          toast.error(mensagem);
         },
       }
     );
+  };
+
+  // Função para abrir o modal de conclusão da OS
+  const handleOpenConclusionModal = () => {
+    console.log("Abrindo modal de conclusão da OS");
+    setIsClosingModalOpen(true);
+  };
+
+  // Função para tratar a confirmação do motivo de fechamento
+  const handleConfirmClosing = (reason: string) => {
+    console.log("Motivo de fechamento confirmado:", reason);
+    setIsClosingModalOpen(false);
+    handleChangeStatus("concluido", reason);
   };
 
   // Inicializar formulário quando os dados chegarem
@@ -217,18 +288,18 @@ export default function VisualizarOS() {
   // Função para salvar as alterações
   const handleSave = async () => {
     if (!osId) return;
-    
+
     try {
       // Criar uma cópia do formulário para enviar à API
       const dadosParaEnviar = {
         ...editForm,
         // Não precisamos converter o agendamento, pois já está no formato correto para a API
       };
-      
+
       await OrdensServicoService.atualizar(Number(osId), dadosParaEnviar);
       toast.success("OS atualizada com sucesso!");
       setIsEditing(false);
-      
+
       // Recarregar os dados da OS
       refetch();
     } catch (error) {
@@ -241,7 +312,7 @@ export default function VisualizarOS() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    
+
     // Para todos os campos, usar o valor como está
     setEditForm((prev) => ({
       ...prev,
@@ -252,11 +323,11 @@ export default function VisualizarOS() {
   // Função para adicionar/atualizar o link externo
   const handleSalvarLink = async () => {
     if (!osId) return;
-    
+
     try {
       setIsAdicionandoLink(true);
-      await OrdensServicoService.atualizar(Number(osId), { 
-        closingLink: linkExterno 
+      await OrdensServicoService.atualizar(Number(osId), {
+        closingLink: linkExterno,
       });
       toast.success("Link adicionado com sucesso!");
       refetch(); // Recarregar os dados da OS
@@ -266,6 +337,69 @@ export default function VisualizarOS() {
     } finally {
       setIsAdicionandoLink(false);
     }
+  };
+
+  // Função para reabrir a OS (alterar status para pendente)
+  const handleReopenOS = () => {
+    if (!osId) return;
+
+    console.log("Reabrindo a OS...");
+    setIsReopenModalOpen(true);
+  };
+
+  const handleReopenConfirm = (reason: string) => {
+    console.log("Motivo de reabertura confirmado:", reason);
+    setIsReopenModalOpen(false);
+
+    // Chamar mudarStatus com reopenReason
+    if (!osId) return;
+
+    setIsChangingStatus(true);
+
+    // Atualizar o estado local imediatamente para feedback visual
+    if (os) {
+      const osAtualizado = {
+        ...os,
+        status: "novo" as any,
+      };
+      setLocalOS(osAtualizado);
+    }
+
+    mudarStatus(
+      {
+        id: Number(osId),
+        status: "novo",
+        reopenReason: reason,
+      },
+      {
+        onSuccess: (data) => {
+          console.log("Status alterado com sucesso:", data);
+          setIsChangingStatus(false);
+
+          // Atualizar o estado local com os dados da API
+          setLocalOS(data);
+          refetch(); // Recarregar os dados da OS
+
+          // Atualizar a timeline
+          refetchEventos();
+
+          toast.success(`OS reaberta com sucesso!`);
+        },
+        onError: (error: any) => {
+          console.error("Erro ao reabrir OS:", error);
+          setIsChangingStatus(false);
+
+          // Reverter para o status original em caso de erro
+          if (os) {
+            setLocalOS(os);
+          }
+
+          // Exibir mensagem de erro amigável
+          const mensagem = error.message || "Não foi possível reabrir a OS";
+          toast.error(mensagem);
+        },
+      }
+    );
   };
 
   const tabs = [
@@ -364,13 +498,21 @@ export default function VisualizarOS() {
             </p>
           </div>
           <div className="ml-auto flex gap-2">
-            {os.status !== "concluido" && (
+            {os.status !== "concluido" ? (
               <button
-                onClick={() => handleChangeStatus("concluido")}
+                onClick={handleOpenConclusionModal}
                 className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-colors"
                 disabled={isChangingStatus}
               >
                 {isChangingStatus ? "Processando..." : "Concluir OS"}
+              </button>
+            ) : (
+              <button
+                onClick={handleReopenOS}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm transition-colors"
+                disabled={isChangingStatus}
+              >
+                {isChangingStatus ? "Processando..." : "Reabrir OS"}
               </button>
             )}
           </div>
@@ -468,16 +610,43 @@ export default function VisualizarOS() {
                   <h2 className="text-lg font-medium mb-2">Detalhes</h2>
                   <p className="text-gray-600">{os.descricao}</p>
                 </div>
-                
+
+                {os.status === "concluido" && os.closingReason && (
+                  <div className="bg-green-50 border border-green-100 rounded-xl p-6">
+                    <h2 className="text-lg font-medium text-green-800 mb-2">
+                      Motivo do Fechamento
+                    </h2>
+                    <p className="text-green-700">{os.closingReason}</p>
+                  </div>
+                )}
+
+                {os.status === "novo" && os.reopenReason && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
+                    <h2 className="text-lg font-medium text-blue-800 mb-2">
+                      Motivo da Reabertura
+                    </h2>
+                    <p className="text-blue-700">{os.reopenReason}</p>
+                  </div>
+                )}
+
+                {/* Adicionar componente de transferência apenas se a OS não estiver concluída */}
+                {os.status !== "concluido" && (
+                  <TransferirOS
+                    osId={os.id}
+                    currentAssigneeId={os.responsavel?.id}
+                    onSuccess={() => refetch()}
+                  />
+                )}
+
                 <div className="bg-white rounded-xl p-6">
                   <h2 className="text-lg font-medium mb-4">Link Externo</h2>
                   <div className="space-y-4">
                     {localOS?.closingLink ? (
                       <div className="space-y-2">
                         <p className="text-sm text-gray-500">Link atual:</p>
-                        <a 
-                          href={localOS.closingLink} 
-                          target="_blank" 
+                        <a
+                          href={localOS.closingLink}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline flex items-center gap-2"
                         >
@@ -486,12 +655,20 @@ export default function VisualizarOS() {
                         </a>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">Nenhum link adicionado ainda.</p>
+                      <p className="text-sm text-gray-500">
+                        Nenhum link adicionado ainda.
+                      </p>
                     )}
-                    
+
                     <div className="space-y-2">
-                      <label htmlFor="link-externo" className="text-sm font-medium text-gray-700">
-                        {localOS?.closingLink ? 'Atualizar link' : 'Adicionar link'}:
+                      <label
+                        htmlFor="link-externo"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        {localOS?.closingLink
+                          ? "Atualizar link"
+                          : "Adicionar link"}
+                        :
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -507,7 +684,7 @@ export default function VisualizarOS() {
                           disabled={isAdicionandoLink || !linkExterno}
                           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {isAdicionandoLink ? 'Salvando...' : 'Salvar'}
+                          {isAdicionandoLink ? "Salvando..." : "Salvar"}
                         </button>
                       </div>
                     </div>
@@ -523,7 +700,9 @@ export default function VisualizarOS() {
               />
             )}
 
-            {activeTab === "comentarios" && osId && <ComentariosOS osId={Number(osId)} />}
+            {activeTab === "comentarios" && osId && (
+              <ComentariosOS osId={Number(osId)} />
+            )}
 
             {activeTab === "edicao" && (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -616,6 +795,20 @@ export default function VisualizarOS() {
         isOpen={isRegistrarTempoModalOpen}
         onClose={() => setIsRegistrarTempoModalOpen(false)}
         onRegistrar={handleRegistrarTempo}
+      />
+
+      {/* Modal de motivo de fechamento para o botão Concluir OS */}
+      <ClosingReasonModal
+        isOpen={isClosingModalOpen}
+        onClose={() => setIsClosingModalOpen(false)}
+        onConfirm={handleConfirmClosing}
+      />
+
+      {/* Modal de motivo de reabertura para o botão Reabrir OS */}
+      <ReopenReasonModal
+        isOpen={isReopenModalOpen}
+        onClose={() => setIsReopenModalOpen(false)}
+        onConfirm={handleReopenConfirm}
       />
     </DashboardLayout>
   );

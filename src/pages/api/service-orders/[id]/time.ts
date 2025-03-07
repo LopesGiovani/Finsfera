@@ -8,6 +8,7 @@ import {
 import { ServiceOrder, User } from "@/pages/api/_app-init";
 import sequelize from "@/lib/db";
 import { QueryTypes } from "sequelize";
+import { TimelineEventService } from "@/services/timelineEventService";
 
 // Interface para tipar o resultado da consulta SQL
 interface TimeEntryRow {
@@ -60,7 +61,9 @@ export default async function handler(
     const serviceOrder = await ServiceOrder.findByPk(serviceOrderId);
 
     if (!serviceOrder) {
-      return res.status(404).json({ message: "Ordem de serviço não encontrada" });
+      return res
+        .status(404)
+        .json({ message: "Ordem de serviço não encontrada" });
     }
 
     // GET - Listar registros de tempo
@@ -80,7 +83,8 @@ export default async function handler(
       `);
 
       // Buscar registros de tempo
-      const timeEntries = await sequelize.query<TimeEntryRow>(`
+      const timeEntries = await sequelize.query<TimeEntryRow>(
+        `
         SELECT 
           sote.id, 
           sote.hours as horas, 
@@ -98,10 +102,12 @@ export default async function handler(
           sote."serviceOrderId" = :serviceOrderId
         ORDER BY 
           sote."createdAt" DESC
-      `, {
-        replacements: { serviceOrderId },
-        type: QueryTypes.SELECT
-      });
+      `,
+        {
+          replacements: { serviceOrderId },
+          type: QueryTypes.SELECT,
+        }
+      );
 
       return res.status(200).json(timeEntries);
     }
@@ -131,27 +137,40 @@ export default async function handler(
 
       // Inserir registro de tempo
       try {
-        const insertResult = await sequelize.query(`
+        const insertResult = await sequelize.query(
+          `
           INSERT INTO service_order_time_entries ("serviceOrderId", "userId", hours, minutes, description, "createdAt", "updatedAt")
           VALUES (:serviceOrderId, :userId, :hours, :minutes, :description, CURRENT_TIMESTAMP AT TIME ZONE 'UTC', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
           RETURNING id
-        `, {
-          replacements: { 
-            serviceOrderId, 
-            userId: user.id, 
-            hours: horas,
-            minutes: minutos,
-            description: descricao
-          },
-          type: QueryTypes.INSERT
-        });
+        `,
+          {
+            replacements: {
+              serviceOrderId,
+              userId: user.id,
+              hours: horas,
+              minutes: minutos,
+              description: descricao,
+            },
+            type: QueryTypes.INSERT,
+          }
+        );
 
         // Extrair o ID do registro inserido
         // @ts-ignore - Ignorando erros de tipo aqui, pois sabemos que o formato do resultado é [resultados, metadados]
         const timeEntryId = insertResult[0][0].id;
 
+        // Registrar evento na timeline
+        await TimelineEventService.registerTimeLog({
+          serviceOrderId,
+          userId: user.id,
+          hours: horas,
+          minutes: minutos,
+          description: descricao,
+        });
+
         // Buscar o registro recém-criado
-        const timeEntries = await sequelize.query<TimeEntryRow>(`
+        const timeEntries = await sequelize.query<TimeEntryRow>(
+          `
           SELECT 
             sote.id, 
             sote.hours as horas, 
@@ -167,13 +186,17 @@ export default async function handler(
             users u ON sote."userId" = u.id
           WHERE 
             sote.id = :timeEntryId
-        `, {
-          replacements: { timeEntryId },
-          type: QueryTypes.SELECT
-        });
+        `,
+          {
+            replacements: { timeEntryId },
+            type: QueryTypes.SELECT,
+          }
+        );
 
         if (!timeEntries || timeEntries.length === 0) {
-          return res.status(500).json({ message: "Erro ao recuperar o registro de tempo criado" });
+          return res
+            .status(500)
+            .json({ message: "Erro ao recuperar o registro de tempo criado" });
         }
 
         const newTimeEntry = timeEntries[0];
@@ -188,14 +211,16 @@ export default async function handler(
           updatedAt: newTimeEntry.updatedAt,
           usuario: {
             id: newTimeEntry["usuario.id"],
-            nome: newTimeEntry["usuario.nome"]
-          }
+            nome: newTimeEntry["usuario.nome"],
+          },
         };
 
         return res.status(201).json(formattedTimeEntry);
       } catch (error) {
         console.error("Erro ao criar registro de tempo:", error);
-        return res.status(500).json({ message: "Erro ao criar registro de tempo" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao criar registro de tempo" });
       }
     }
 
@@ -205,4 +230,4 @@ export default async function handler(
     console.error("Erro ao processar registros de tempo:", error);
     return res.status(500).json({ message: "Erro interno do servidor" });
   }
-} 
+}

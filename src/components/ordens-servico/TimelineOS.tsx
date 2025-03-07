@@ -10,6 +10,7 @@ import {
   BanknotesIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 
 interface Evento {
@@ -36,6 +37,8 @@ function getIconoEvento(tipo: string) {
       return { icone: DocumentTextIcon, cor: "bg-blue-100 text-blue-600" };
     case "atribuicao":
       return { icone: UserIcon, cor: "bg-indigo-100 text-indigo-600" };
+    case "transferencia":
+      return { icone: ArrowRightIcon, cor: "bg-indigo-100 text-indigo-600" };
     case "status":
       return { icone: ArrowPathIcon, cor: "bg-yellow-100 text-yellow-600" };
     case "comentario":
@@ -49,9 +52,11 @@ function getIconoEvento(tipo: string) {
       return { icone: PaperClipIcon, cor: "bg-teal-100 text-teal-600" };
     case "fechamento":
       return { icone: CheckCircleIcon, cor: "bg-emerald-100 text-emerald-600" };
+    case "reabertura":
+      return { icone: ArrowPathIcon, cor: "bg-blue-500 text-white" };
     case "faturamento":
       return { icone: BanknotesIcon, cor: "bg-orange-100 text-orange-600" };
-    case "cancelamento":
+    case "rejeicao":
       return { icone: XCircleIcon, cor: "bg-red-100 text-red-600" };
     default:
       return { icone: DocumentTextIcon, cor: "bg-gray-100 text-gray-600" };
@@ -73,6 +78,16 @@ export function TimelineOS({
   eventos = [],
   isLoading = false,
 }: TimelineOSProps) {
+  // Adicionar logs para depuração
+  console.log(
+    `[TimelineOS] Renderizando ${eventos.length} eventos:`,
+    eventos.map((e) => ({
+      tipo: e.tipo,
+      descricao: e.descricao,
+      metadados: e.metadados,
+    }))
+  );
+
   if (isLoading) {
     return (
       <div className="py-10 text-center">
@@ -121,6 +136,12 @@ export function TimelineOS({
                         {evento.usuario.nome}
                       </span>{" "}
                       {evento.descricao}
+                      {evento.tipo === "transferencia" &&
+                        evento.metadados?.para && (
+                          <span className="mx-1 font-medium text-gray-900">
+                            {evento.metadados.para.nome}
+                          </span>
+                        )}
                       {evento.tipo === "status" && evento.metadados?.status && (
                         <span
                           className={`mx-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
@@ -129,10 +150,6 @@ export function TimelineOS({
                               ? "bg-green-100 text-green-800"
                               : evento.metadados.status === "em_andamento"
                               ? "bg-blue-100 text-blue-800"
-                              : evento.metadados.status === "cancelado"
-                              ? "bg-red-100 text-red-800"
-                              : evento.metadados.status === "faturado"
-                              ? "bg-purple-100 text-purple-800"
                               : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
@@ -140,10 +157,6 @@ export function TimelineOS({
                             ? "Concluído"
                             : evento.metadados.status === "em_andamento"
                             ? "Em Andamento"
-                            : evento.metadados.status === "cancelado"
-                            ? "Cancelado"
-                            : evento.metadados.status === "faturado"
-                            ? "Faturado"
                             : "Em Aberto"}
                         </span>
                       )}
@@ -168,7 +181,11 @@ export function TimelineOS({
                       </span>
                     </div>
 
-                    {evento.tipo === "comentario" &&
+                    {(evento.tipo === "comentario" ||
+                      evento.tipo === "fechamento" ||
+                      evento.tipo === "rejeicao" ||
+                      evento.tipo === "reabertura" ||
+                      evento.tipo === "transferencia") &&
                       evento.metadados?.texto && (
                         <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
                           {evento.metadados.texto}
