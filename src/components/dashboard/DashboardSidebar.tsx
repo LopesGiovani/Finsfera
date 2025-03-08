@@ -18,6 +18,7 @@ import {
   CreditCardIcon,
   CogIcon,
   WrenchScrewdriverIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import { Logo } from "../Logo";
 
@@ -98,6 +99,7 @@ const menuItems = [
     icon: CogIcon,
     href: "/dashboard/integracoes",
   },
+  { name: "Meu Perfil", icon: UserIcon, href: "/profile" },
 ];
 
 export function DashboardSidebar() {

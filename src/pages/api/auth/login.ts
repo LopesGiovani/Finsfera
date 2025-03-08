@@ -1,76 +1,174 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import User from "@/models/User";
-import jwt from "jsonwebtoken";
-
-// Obtém o JWT_SECRET do ambiente
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import User from "../../../models/User";
+import { generateToken } from "../../../utils/auth";
+import bcrypt from "bcryptjs";
+import sequelize from "@/lib/db";
+import { QueryTypes } from "sequelize";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Apenas aceita método POST
+  // Log de entrada para depuração
+  console.log("[API] /api/auth/login - Requisição recebida");
+
+  // Apenas POST é permitido
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Método não permitido" });
+    return res.status(405).json({
+      success: false,
+      message: "Método não permitido",
+    });
   }
 
   try {
+    // Obter dados do corpo da requisição
     const { email, password } = req.body;
 
-    // Valida os campos
+    // Validar presença de email e senha
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email e senha são obrigatórios" });
+      return res.status(400).json({
+        success: false,
+        message: "Email e senha são obrigatórios",
+      });
     }
 
-    // Busca o usuário pelo email
+    // Buscar usuário pelo email
     const user = await User.findOne({ where: { email } });
 
+    // Verificar se o usuário existe
     if (!user) {
-      return res.status(401).json({ message: "Credenciais inválidas" });
+      // Log para depuração
+      console.log(
+        `[API] /api/auth/login - Usuário com email ${email} não encontrado`
+      );
+
+      return res.status(401).json({
+        success: false,
+        message: "Email ou senha incorretos",
+      });
     }
 
-    // Verifica a senha
-    const isPasswordValid = await user.checkPassword(password);
+    // Verificar se a senha está correta
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Credenciais inválidas" });
+      // Log para depuração
+      console.log(`[API] /api/auth/login - Senha inválida para ${email}`);
+
+      return res.status(401).json({
+        success: false,
+        message: "Email ou senha incorretos",
+      });
     }
 
-    // Gera o token JWT
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-      },
-      JWT_SECRET,
-      { expiresIn: "24h" }
+    // Verificar se o usuário está ativo
+    if (user.active === false) {
+      // Log para depuração
+      console.log(`[API] /api/auth/login - Usuário ${email} está inativo`);
+
+      return res.status(403).json({
+        success: false,
+        message: "Usuário desativado. Entre em contato com o administrador.",
+      });
+    }
+
+    // Gerar token JWT
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    // Verificar se a tabela user_activities existe e, se não, criar
+    try {
+      const checkTableExists = await sequelize.query(
+        `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'user_activities'
+        );
+      `,
+        { type: QueryTypes.SELECT }
+      );
+
+      const tableExists = (checkTableExists[0] as any).exists;
+
+      if (!tableExists) {
+        console.log("[API] /api/auth/login - Criando tabela user_activities");
+        await sequelize.query(`
+          CREATE TABLE user_activities (
+            id SERIAL PRIMARY KEY,
+            "userId" INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            "entityType" TEXT,
+            "entityId" INTEGER,
+            details JSONB,
+            "ipAddress" TEXT,
+            "userAgent" TEXT,
+            "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `);
+      }
+
+      // Registrar atividade de login usando SQL direto
+      await sequelize.query(
+        `
+        INSERT INTO user_activities (
+          "userId", action, "ipAddress", "userAgent", "createdAt", "updatedAt"
+        ) VALUES (
+          :userId, 'Login no sistema', :ipAddress, :userAgent, NOW(), NOW()
+        );
+      `,
+        {
+          replacements: {
+            userId: user.id,
+            ipAddress:
+              (req.headers["x-real-ip"] as string) || req.socket.remoteAddress,
+            userAgent: req.headers["user-agent"] || "",
+          },
+          type: QueryTypes.INSERT,
+        }
+      );
+
+      console.log(
+        `[API] /api/auth/login - Atividade de login registrada para usuário ${user.id}`
+      );
+    } catch (activityError) {
+      // Apenas log do erro, não impede o login
+      console.error(
+        "[API] /api/auth/login - Erro ao registrar atividade:",
+        activityError
+      );
+    }
+
+    // Log para depuração após login bem-sucedido
+    console.log(
+      `[API] /api/auth/login - Login bem-sucedido para ${email} (ID: ${user.id})`
     );
 
-    // Define o cookie de autenticação de forma mais simples
-    res.setHeader(
-      "Set-Cookie",
-      `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${
-        process.env.NODE_ENV === "production" ? "; Secure" : ""
-      }`
-    );
-
-    // Retorna os dados do usuário (excluindo a senha)
-    // Certifique-se de que o objeto do usuário seja tratado corretamente
-    const userObj = user.toJSON ? user.toJSON() : { ...user.dataValues };
-
-    // Remova a senha do objeto do usuário
-    const { password: _, ...userWithoutPassword } = userObj;
-
+    // Retornar dados do usuário e token
     return res.status(200).json({
       success: true,
       message: "Login realizado com sucesso",
-      user: userWithoutPassword,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+        canSeeAllOS: user.canSeeAllOS,
+      },
       token,
     });
-  } catch (error) {
-    console.error("Erro de login:", error);
-    return res.status(500).json({ message: "Erro ao processar a solicitação" });
+  } catch (error: any) {
+    // Log de erro para depuração
+    console.error("[API] /api/auth/login - Erro:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor",
+      details: error.message,
+    });
   }
 }

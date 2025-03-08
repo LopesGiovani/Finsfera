@@ -572,6 +572,56 @@ async function createTimelineEventsTable() {
 }
 
 /**
+ * Cria a tabela de atividades do usuário para rastreamento de ações
+ */
+async function createUserActivitiesTable() {
+  try {
+    // Verificar se a tabela já existe
+    const tableExists = await sequelize.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'user_activities'
+      );
+    `);
+
+    if (tableExists[0][0].exists) {
+      console.log("✅ Tabela user_activities já existe. Pulando criação.");
+      return true;
+    }
+
+    console.log("\nCriando tabela user_activities...");
+
+    await sequelize.query(`
+      CREATE TABLE user_activities (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        action VARCHAR(255) NOT NULL,
+        "entityType" VARCHAR(50),
+        "entityId" INTEGER,
+        details JSONB,
+        "ipAddress" VARCHAR(45),
+        "userAgent" TEXT,
+        "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_user_activities_user FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+
+    // Criar índices para melhorar performance
+    await sequelize.query(`
+      CREATE INDEX idx_user_activities_user_id ON user_activities ("userId");
+      CREATE INDEX idx_user_activities_created_at ON user_activities ("createdAt");
+      CREATE INDEX idx_user_activities_entity ON user_activities ("entityType", "entityId");
+    `);
+
+    console.log("✅ Tabela user_activities criada com sucesso!");
+    return true;
+  } catch (error) {
+    console.error("❌ Erro ao criar tabela user_activities:", error.message);
+    return false;
+  }
+}
+
+/**
  * Cria dados iniciais para testes
  */
 async function createInitialData() {
@@ -925,6 +975,53 @@ async function createInitialData() {
 
     console.log("✅ Eventos de timeline criados com sucesso!");
 
+    // Criar registros de atividade inicial para demonstração
+    console.log("\nCriando registros de atividade inicial...");
+
+    // Atividades para o owner
+    await sequelize.query(`
+      INSERT INTO user_activities (
+        "userId", action, "createdAt"
+      ) VALUES (
+        ${managerId}, 'Login no sistema', NOW() - INTERVAL '2 HOURS'
+      );
+    `);
+
+    await sequelize.query(`
+      INSERT INTO user_activities (
+        "userId", action, "entityType", "entityId", "createdAt"
+      ) VALUES (
+        ${managerId}, 'Visualizou uma ordem de serviço', 'service_order', ${os2Id}, NOW() - INTERVAL '1 HOUR 45 MINUTES'
+      );
+    `);
+
+    await sequelize.query(`
+      INSERT INTO user_activities (
+        "userId", action, "entityType", "entityId", details, "createdAt"
+      ) VALUES (
+        ${managerId}, 'Atualizou dados do perfil', NULL, NULL, '{"nameUpdated": true}'::jsonb, NOW() - INTERVAL '1 HOUR 30 MINUTES'
+      );
+    `);
+
+    // Atividades para os técnicos
+    await sequelize.query(`
+      INSERT INTO user_activities (
+        "userId", action, "createdAt"
+      ) VALUES (
+        ${techIds[0]}, 'Login no sistema', NOW() - INTERVAL '4 HOURS'
+      );
+    `);
+
+    await sequelize.query(`
+      INSERT INTO user_activities (
+        "userId", action, "entityType", "entityId", "createdAt"
+      ) VALUES (
+        ${techIds[0]}, 'Atualizou status de uma ordem de serviço', 'service_order', ${os3Id}, NOW() - INTERVAL '3 HOURS 45 MINUTES'
+      );
+    `);
+
+    console.log("✅ Registros de atividade inicial criados com sucesso!");
+
     console.log("\n" + "=".repeat(60));
     console.log(" 🎉 DADOS DE TESTE CRIADOS COM SUCESSO! 🎉 ");
     console.log("=".repeat(60));
@@ -955,6 +1052,7 @@ async function runMasterSetup() {
     comments: false,
     commentsStructure: false,
     timelineEvents: false,
+    userActivities: false,
     initialData: false,
   };
 
@@ -976,6 +1074,7 @@ async function runMasterSetup() {
     results.attachments = await createAttachmentsTable();
     results.comments = await createCommentsTable();
     results.timelineEvents = await createTimelineEventsTable();
+    results.userActivities = await createUserActivitiesTable();
 
     // 4. Corrigir estrutura da tabela de comentários se necessário
     results.commentsStructure = await fixCommentsTable();
@@ -1015,6 +1114,11 @@ async function runMasterSetup() {
     );
     console.log(
       `Tabela timeline_events: ${results.timelineEvents ? "✅ OK" : "❌ Falha"}`
+    );
+    console.log(
+      `Tabela user_activities:  ${
+        results.userActivities ? "✅ OK" : "❌ Falha"
+      }`
     );
     console.log(
       `Dados iniciais:         ${results.initialData ? "✅ OK" : "❌ Falha"}`
