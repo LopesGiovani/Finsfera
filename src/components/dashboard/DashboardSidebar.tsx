@@ -130,7 +130,18 @@ export function DashboardSidebar() {
     return router.pathname.startsWith(href) && href !== "/dashboard";
   };
 
-  const isActiveSubLink = (href: string) => router.pathname.startsWith(href);
+  const isActiveSubLink = (href: string) => {
+    // Para rotas principais como "/dashboard/ordens-servico" faz uma comparação exata
+    // Evita que "Lista de OS" fique destacado quando estiver em "Nova OS" ou "Relatórios"
+    const parts = href.split("/");
+    const isBaseSectionPath = parts.length === 3;
+
+    if (isBaseSectionPath) {
+      return router.pathname === href;
+    }
+
+    return router.pathname.startsWith(href);
+  };
 
   const isExpandedSection = (item: (typeof menuItems)[0]) => {
     return (
