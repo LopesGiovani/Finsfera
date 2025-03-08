@@ -15,7 +15,7 @@ interface ServiceOrderAttributes {
   organizationId: number;
   title: string;
   description: string;
-  status: "pendente" | "em_andamento" | "concluida" | "reprovada";
+  status: "pendente" | "em_andamento" | "concluida" | "reprovada" | "encerrada";
   priority: "baixa" | "alta" | "urgente";
   assignedToId: number; // ID do usuário designado
   assignedByUserId: number; // ID de quem criou a OS
@@ -58,7 +58,12 @@ class ServiceOrder
   public organizationId!: number;
   public title!: string;
   public description!: string;
-  public status!: "pendente" | "em_andamento" | "concluida" | "reprovada";
+  public status!:
+    | "pendente"
+    | "em_andamento"
+    | "concluida"
+    | "reprovada"
+    | "encerrada";
   public priority!: "baixa" | "alta" | "urgente";
   public assignedToId!: number;
   public assignedByUserId!: number;
@@ -105,7 +110,8 @@ ServiceOrder.init(
         "pendente",
         "em_andamento",
         "concluida",
-        "reprovada"
+        "reprovada",
+        "encerrada"
       ),
       defaultValue: "pendente",
       allowNull: false,

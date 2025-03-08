@@ -50,7 +50,8 @@
     "migrate": "node src/scripts/migration.js",
     "generate-secret": "node src/scripts/generate-secret.js",
     "dev:prod": "cross-env NODE_ENV=production next dev",
-    "configure-db": "node src/scripts/configureDatabase.js"
+    "configure-db": "node src/scripts/configureDatabase.js",
+    "create-customers": "node src/scripts/createCustomers.js"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

@@ -5,7 +5,8 @@ export interface OS {
   numero: string;
   titulo: string;
   descricao: string;
-  status: "novo" | "em_andamento" | "concluido";
+  status: "novo" | "em_andamento" | "concluido" | "encerrado";
+  prioridade: "baixa" | "alta" | "urgente";
   cliente: Cliente;
   responsavel: Usuario | null;
   agendamento: string;
@@ -114,6 +115,7 @@ function mapApiResponseToOS(apiResponse: ServiceOrderAPI[]): OS[] {
         titulo: order.title,
         descricao: order.description,
         status: mapStatus(order.status),
+        prioridade: mapPriority(order.priority),
         cliente: order.customer
           ? {
               id: order.customer.id,
@@ -159,7 +161,9 @@ function mapApiResponseToOS(apiResponse: ServiceOrderAPI[]): OS[] {
   return result;
 }
 
-function mapStatus(apiStatus: string): "novo" | "em_andamento" | "concluido" {
+function mapStatus(
+  apiStatus: string
+): "novo" | "em_andamento" | "concluido" | "encerrado" {
   // Log para debug
   console.log(`Mapeando status da API: "${apiStatus}"`);
 
@@ -170,11 +174,16 @@ function mapStatus(apiStatus: string): "novo" | "em_andamento" | "concluido" {
     pendente: "novo",
     em_andamento: "em_andamento",
     concluida: "concluido",
+    encerrada: "encerrado",
     reprovada: "novo", // Agora mapeia reprovada para novo
   };
 
   // Se o status já estiver no formato do frontend, retorná-lo diretamente
-  if (["novo", "em_andamento", "concluido"].includes(normalizedStatus)) {
+  if (
+    ["novo", "em_andamento", "concluido", "encerrado"].includes(
+      normalizedStatus
+    )
+  ) {
     console.log(
       `  - Status já está no formato do frontend: "${normalizedStatus}"`
     );
@@ -196,9 +205,23 @@ function mapStatusToApi(frontendStatus: string): string {
       return "em_andamento";
     case "concluido":
       return "concluida";
+    case "encerrado":
+      return "encerrada";
     default:
-      return "pendente"; // Por padrão retorna pendente
+      return "pendente";
   }
+}
+
+function mapPriority(apiPriority: string): "baixa" | "alta" | "urgente" {
+  // Normalizar a prioridade
+  const normalizedPriority = apiPriority?.toLowerCase()?.trim() || "";
+
+  // Se já estiver no formato correto
+  if (["baixa", "alta", "urgente"].includes(normalizedPriority)) {
+    return normalizedPriority as any;
+  }
+
+  return "baixa"; // Padrão
 }
 
 export const OrdensServicoService = {

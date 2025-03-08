@@ -16,16 +16,15 @@ const statusApiToFrontend = {
   em_andamento: "em_andamento",
   concluida: "concluido",
   reprovada: "novo",
+  encerrada: "encerrado",
 };
-
-// Adicionando um console.log para debug
-console.log("StatusOS inicializado com mapeamento:", statusApiToFrontend);
 
 // Configuração de exibição dos status do frontend
 const statusConfig = {
   novo: { cor: "bg-yellow-100 text-yellow-800", texto: "Em Aberto" },
   em_andamento: { cor: "bg-blue-100 text-blue-800", texto: "Em Andamento" },
   concluido: { cor: "bg-green-100 text-green-800", texto: "Concluído" },
+  encerrado: { cor: "bg-gray-100 text-gray-700", texto: "Encerrado" },
 };
 
 export function StatusOS({
@@ -79,19 +78,8 @@ export function StatusOS({
   }
 
   const handleStatusChange = (novoStatus: string) => {
-    console.log("Tentando mudar status para:", novoStatus);
-
-    // Para debug, vamos logar os valores importantes
-    console.log({
-      novoStatus,
-      isOpeningModal: novoStatus === "concluido",
-      pendingStatusBeforeChange: pendingStatus,
-      currentLocalStatus: localStatus,
-    });
-
     // Se o novo status for "concluido", abrir o modal de motivo
     if (novoStatus === "concluido") {
-      console.log("Abrindo modal para status 'concluido'");
       setPendingStatus(novoStatus);
       setIsClosingModalOpen(true);
       setIsMenuOpen(false);
@@ -108,8 +96,6 @@ export function StatusOS({
   };
 
   const handleConfirmClosing = (closingReason: string) => {
-    console.log("Modal confirmado com motivo:", closingReason);
-
     if (pendingStatus && onChangeStatus) {
       // Atualizamos o estado local imediatamente para feedback instantâneo
       setLocalStatus(pendingStatus);
@@ -229,7 +215,6 @@ export function StatusOS({
       <ClosingReasonModal
         isOpen={isClosingModalOpen}
         onClose={() => {
-          console.log("Modal fechado pelo usuário");
           setIsClosingModalOpen(false);
           setPendingStatus(null);
         }}

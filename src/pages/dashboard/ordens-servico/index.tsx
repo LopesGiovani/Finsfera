@@ -7,15 +7,15 @@ import {
   ChevronDownIcon,
   AdjustmentsHorizontalIcon,
   XMarkIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import {
-  useOrdensServicoFiltros,
-} from "@/hooks/useOrdensServico";
+import { useOrdensServicoFiltros } from "@/hooks/useOrdensServico";
 import { StatusOS } from "@/components/ordens-servico/StatusOS";
 import { formatarMoeda, formatarData } from "@/utils/formatters";
 import { OS } from "@/services/ordens-servico";
 import { toast } from "react-hot-toast";
+import { PrioridadeTag } from "@/components/ordens-servico/PrioridadeTag";
 
 export default function OrdensServico() {
   const { data, isLoading, filtros, atualizarFiltros, pagina, setPagina } =
@@ -23,6 +23,7 @@ export default function OrdensServico() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [showEncerradas, setShowEncerradas] = useState(false);
 
   // Efeito para aplicar busca após digitar
   useEffect(() => {
@@ -35,9 +36,26 @@ export default function OrdensServico() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Efeito para atualizar filtros baseado no status selecionado e na opção de mostrar encerradas
+  useEffect(() => {
+    // Aplicar os filtros de status selecionados
+    atualizarFiltros({ status: selectedStatus });
+  }, [selectedStatus]);
+
+  // Efeito para verificar se encerradas devem ser mostradas
+  useEffect(() => {
+    if (!showEncerradas) {
+      // Se não mostrar encerradas, remover "encerrado" dos filtros
+      const filtrosAtualizados = selectedStatus.filter(
+        (s) => s !== "encerrado"
+      );
+      if (filtrosAtualizados.length !== selectedStatus.length) {
+        setSelectedStatus(filtrosAtualizados);
+      }
+    }
+  }, [showEncerradas, selectedStatus]);
+
   const handleStatusFilterChange = (status: string) => {
-    console.log(`Alterando filtro para status: "${status}"`);
-    
     let newSelectedStatus = [...selectedStatus];
 
     if (newSelectedStatus.includes(status)) {
@@ -49,8 +67,6 @@ export default function OrdensServico() {
     }
 
     setSelectedStatus(newSelectedStatus);
-    
-    console.log(`Novos status selecionados: ${JSON.stringify(newSelectedStatus)}`);
 
     // Atualizar filtros para a API
     atualizarFiltros({
@@ -80,18 +96,6 @@ export default function OrdensServico() {
     concluidas:
       data?.data?.filter((os: OS) => os.status === "concluido").length || 0,
   };
-
-  // Log para debug
-  console.log("Dados recebidos no dashboard:", data?.data);
-  console.log("Estatísticas calculadas:", stats);
-  
-  // Log dos status de cada OS
-  if (data?.data) {
-    console.log("Status de cada OS:");
-    data.data.forEach((os: OS) => {
-      console.log(`OS ${os.id} (${os.numero}): status = "${os.status}"`);
-    });
-  }
 
   return (
     <DashboardLayout>
@@ -224,6 +228,30 @@ export default function OrdensServico() {
               >
                 Concluído
               </button>
+
+              <div className="flex items-center ml-4">
+                <input
+                  type="checkbox"
+                  id="showEncerradas"
+                  checked={showEncerradas}
+                  onChange={(e) => {
+                    setShowEncerradas(e.target.checked);
+                    if (e.target.checked) {
+                      // Adicionar "encerrado" aos filtros quando o checkbox estiver marcado
+                      if (!selectedStatus.includes("encerrado")) {
+                        handleStatusFilterChange("encerrado");
+                      }
+                    }
+                  }}
+                  className="h-4 w-4 text-blue-600 rounded"
+                />
+                <label
+                  htmlFor="showEncerradas"
+                  className="ml-2 text-xs font-medium text-gray-700"
+                >
+                  Mostrar Encerradas
+                </label>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
@@ -263,19 +291,25 @@ export default function OrdensServico() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 text-sm text-gray-500">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                   Nº OS
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
+                  Título
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
                   Responsável
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[25%]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
                   Cliente
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                   Agendamento
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                  Prioridade
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                   Status
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
@@ -286,7 +320,7 @@ export default function OrdensServico() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-4 px-6">
+                  <td colSpan={8} className="py-4 px-6">
                     <div className="text-center py-8">
                       <div className="animate-spin inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full mb-2"></div>
                       <p className="text-gray-500">
@@ -297,7 +331,7 @@ export default function OrdensServico() {
                 </tr>
               ) : data?.data?.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-4 px-6">
+                  <td colSpan={8} className="py-4 px-6">
                     <div className="text-center text-gray-500 py-8">
                       Nenhuma ordem de serviço encontrada
                     </div>
@@ -314,20 +348,27 @@ export default function OrdensServico() {
                         {os.numero}
                       </Link>
                     </td>
+                    <td className="py-4 px-6 truncate max-w-xs">{os.titulo}</td>
                     <td className="py-4 px-6 truncate">
                       {os.responsavel?.nome || "Não atribuído"}
                     </td>
                     <td className="py-4 px-6 truncate">{os.cliente.nome}</td>
-                    <td className="py-4 px-6 whitespace-nowrap">{os.agendamento}</td>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      {os.agendamento}
+                    </td>
+                    <td className="py-4 px-6">
+                      <PrioridadeTag prioridade={os.prioridade} />
+                    </td>
                     <td className="py-4 px-6">
                       <StatusOS status={os.status} />
                     </td>
                     <td className="py-4 px-6 text-center">
                       <Link
                         href={`/dashboard/ordens-servico/${os.id}`}
-                        className="text-sm text-blue-600 hover:text-blue-800 underline"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                        title="Ver detalhes"
                       >
-                        Ver detalhes
+                        <EyeIcon className="w-5 h-5" />
                       </Link>
                     </td>
                   </tr>

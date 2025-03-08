@@ -3,9 +3,6 @@ import { OS, ServiceOrderAPI } from "./ordens-servico";
 
 // Função para mapear os status do backend para o frontend
 function mapStatus(apiStatus: string): "novo" | "em_andamento" | "concluido" {
-  // Log para debug
-  console.log(`[fix] Mapeando status da API: "${apiStatus}"`);
-
   // Normalizar o status (remover espaços, converter para minúsculas)
   const normalizedStatus = apiStatus?.toLowerCase()?.trim() || "";
 
@@ -18,18 +15,11 @@ function mapStatus(apiStatus: string): "novo" | "em_andamento" | "concluido" {
 
   // Se o status já estiver no formato do frontend, retorná-lo diretamente
   if (["novo", "em_andamento", "concluido"].includes(normalizedStatus)) {
-    console.log(
-      `[fix]  - Status já está no formato do frontend: "${normalizedStatus}"`
-    );
     return normalizedStatus as any;
   }
 
-  // Adiciona log para debug
+  // Retornar o status mapeado ou "novo" como padrão
   const mappedStatus = statusMap[normalizedStatus] || "novo";
-  console.log(
-    `[fix]  - Status mapeado: "${normalizedStatus}" -> "${mappedStatus}"`
-  );
-
   return mappedStatus;
 }
 
@@ -46,6 +36,7 @@ export async function obterCorrigido(id: number) {
       titulo: order.title,
       descricao: order.description,
       status: mapStatus(order.status),
+      prioridade: (order.priority as "baixa" | "alta" | "urgente") || "baixa",
       cliente: {
         id: order.customer?.id || 0,
         nome: order.customer?.name || "Cliente não atribuído",

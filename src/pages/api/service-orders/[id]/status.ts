@@ -129,8 +129,29 @@ export default async function handler(
     // Salvar o status anterior para o registro do evento
     const oldStatus = serviceOrder.status;
 
+    // Definir o status final (pode ser alterado para "encerrada" baseado na data)
+    let finalStatus = status;
+    let updateClosedAt = false;
+
+    // Se o status for "concluida", verificar se deve ser "encerrada" baseado na data
+    if (status === "concluida") {
+      const scheduledDate = new Date(serviceOrder.scheduledDate);
+      const currentDate = new Date();
+
+      // Se a data agendada for anterior à data atual, mudar para "encerrada"
+      if (scheduledDate < currentDate) {
+        console.log(
+          `OS ${serviceOrderId} concluída após a data agendada. Marcando como "encerrada".`
+        );
+        finalStatus = "encerrada";
+        updateClosedAt = true;
+      } else {
+        updateClosedAt = true;
+      }
+    }
+
     // Preparar o objeto de atualização
-    const updateData: any = { status };
+    const updateData: any = { status: finalStatus };
 
     // Adicionar closingReason se fornecido
     if (closingReason) {
@@ -142,20 +163,20 @@ export default async function handler(
       updateData.reopenReason = reopenReason;
     }
 
+    // Adicionar closedAt se necessário
+    if (updateClosedAt && !serviceOrder.closedAt) {
+      updateData.closedAt = new Date();
+    }
+
     // Atualizar o status e outros campos
     await serviceOrder.update(updateData);
-
-    // Se o status for "concluida", também definir closedAt como a data atual
-    if (status === "concluida" && !serviceOrder.closedAt) {
-      await serviceOrder.update({ closedAt: new Date() });
-    }
 
     // Registrar o evento de mudança de status na timeline
     await TimelineEventService.registerStatusChange({
       serviceOrderId,
       userId: user.id,
       oldStatus,
-      newStatus: status,
+      newStatus: finalStatus,
       reason: closingReason || reopenReason,
     });
 
