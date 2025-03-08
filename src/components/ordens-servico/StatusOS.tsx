@@ -70,7 +70,7 @@ export function StatusOS({
   if (!onChangeStatus) {
     return (
       <span
-        className={`inline-flex items-center rounded-full font-medium ${statusAtual.cor} ${classesTamanho}`}
+        className={`inline-flex items-center rounded-full font-medium whitespace-nowrap ${statusAtual.cor} ${classesTamanho}`}
       >
         {statusAtual.texto}
       </span>
@@ -123,7 +123,7 @@ export function StatusOS({
           return (
             <>
               <Menu.Button
-                className={`inline-flex items-center gap-2 rounded-full font-medium ${
+                className={`inline-flex items-center gap-2 rounded-full font-medium whitespace-nowrap ${
                   statusAtual.cor
                 } ${classesTamanho} ${isChanging ? "opacity-70" : ""}`}
                 disabled={isChanging}

@@ -288,10 +288,10 @@ export default function OrdensServico() {
         )}
 
         <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="bg-gray-50 text-sm text-gray-500">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[8%]">
                   Nº OS
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
@@ -300,7 +300,7 @@ export default function OrdensServico() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
                   Responsável
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[18%]">
                   Cliente
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
@@ -312,7 +312,7 @@ export default function OrdensServico() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                   Status
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[9%] min-w-[80px]">
                   Ações
                 </th>
               </tr>
@@ -348,21 +348,34 @@ export default function OrdensServico() {
                         {os.numero}
                       </Link>
                     </td>
-                    <td className="py-4 px-6 truncate max-w-xs">{os.titulo}</td>
-                    <td className="py-4 px-6 truncate">
-                      {os.responsavel?.nome || "Não atribuído"}
+                    <td className="py-4 px-6">
+                      <div className="truncate" title={os.titulo}>
+                        {os.titulo}
+                      </div>
                     </td>
-                    <td className="py-4 px-6 truncate">{os.cliente.nome}</td>
+                    <td className="py-4 px-6">
+                      <div
+                        className="truncate"
+                        title={os.responsavel?.nome || "Não atribuído"}
+                      >
+                        {os.responsavel?.nome || "Não atribuído"}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="truncate" title={os.cliente.nome}>
+                        {os.cliente.nome}
+                      </div>
+                    </td>
                     <td className="py-4 px-6 whitespace-nowrap">
                       {os.agendamento}
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 whitespace-nowrap">
                       <PrioridadeTag prioridade={os.prioridade} />
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 whitespace-nowrap">
                       <StatusOS status={os.status} />
                     </td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-4 px-6 text-center whitespace-nowrap">
                       <Link
                         href={`/dashboard/ordens-servico/${os.id}`}
                         className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"

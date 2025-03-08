@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("owner@example.com");
-  const [password, setPassword] = useState("owner123");
+  const [password, setPassword] = useState("user123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
